@@ -17,3 +17,112 @@ body
     width: 100vw;
     height: 100vh;
 }
+
+/* ─── Hero overlay ─────────────────────────────────────────── */
+
+#hero
+{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15vh;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#hero-inner
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    will-change: transform;
+}
+
+#hero-title
+{
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: clamp(4rem, 10vw, 13rem);
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    padding-left: 0.18em;
+    color: #ffffff;
+    line-height: 1;
+    margin: 0;
+    animation: heroReveal 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+}
+
+#hero-subtitle
+{
+    font-family: 'Cormorant SC', serif;
+    font-size: clamp(0.95rem, 1.25vw, 1.35rem);
+    font-weight: 300;
+    letter-spacing: 0.22em;
+    padding-left: 0.22em;
+    color: rgb(236, 228, 255);
+    margin: 0;
+    animation: heroReveal 2.2s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both;
+}
+
+#hero-subtitle::before
+{
+    display: block;
+    width: 2rem;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.20);
+    margin: 0 auto 0.2rem;
+}
+
+/* ─── Linha animada ─────────────────────────────────────────── */
+
+#hero-line
+{
+    width: 560px;
+    height: 1px;
+    background: rgba(210, 195, 255, 0.22);
+    position: relative;
+    overflow: hidden;
+    animation: heroReveal 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both;
+}
+
+#hero-line::after
+{
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;       /* começa fora da borda esquerda */
+    width: 50%;       /* metade da largura da linha */
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent               0%,
+        rgba(255, 255, 255, 0.95) 50%,
+        transparent               100%
+    );
+    animation: shimmer 3.5s linear infinite;
+}
+
+@keyframes shimmer
+{
+    /*
+     * translateX(300%) = 3× largura do ::after (50% do pai)
+     * = 150% do pai → leva o brilho de -50% a +100% (off-screen direito)
+     */
+    to { transform: translateX(300%); }
+}
+
+@keyframes heroReveal
+{
+    from
+    {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+    to
+    {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
