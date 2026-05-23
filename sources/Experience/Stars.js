@@ -77,5 +77,8 @@ export default class Stars
 
     update()
     {
+        this.particles.points.rotation.y += this.time.delta * STARS_ROT_SPEED
     }
 }
+
+const STARS_ROT_SPEED = 0.008 // rad/s — aumentar para girar mais rápido
