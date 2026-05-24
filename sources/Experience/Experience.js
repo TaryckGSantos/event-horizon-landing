@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import Time from './Utils/Time.js'
 import Sizes from './Utils/Sizes.js'
 import Debug from './Debug/Debug.js'
+import CameraScroll from './CameraScroll.js'
 
 import Resources from './Resources.js'
 import Renderer from './Renderer.js'
@@ -41,6 +42,7 @@ export default class Experience
         this.setRenderer()
         this.setResources()
         this.setWorld()
+        this.cameraScroll = new CameraScroll()
 
         this.sizes.on('resize', () =>
         {

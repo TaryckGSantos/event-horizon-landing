@@ -27,9 +27,16 @@ body
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 15vh;
+    padding-top: 8vh;
     pointer-events: none;
     z-index: 10;
+}
+
+/* saída do hero (controlada por JS via CameraScroll) */
+#hero.hero-away
+{
+    opacity:   0;
+    transform: translateY(-24px);
 }
 
 #hero-inner
