@@ -30,18 +30,12 @@ body
     padding-bottom:  8vh;
     pointer-events:  none;
     z-index:         10;
-
-    opacity:   0;
-    transform: translateY(16px);
-    transition:
-        opacity   0.65s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity:         0;
 }
 
 #cards-overlay.is-visible
 {
     opacity:        1;
-    transform:      translateY(0);
     pointer-events: all;
 }
 

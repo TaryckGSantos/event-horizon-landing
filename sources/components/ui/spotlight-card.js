@@ -26,6 +26,10 @@ export function createGlowCard({ title, description, width = 300 })
         <p  class="card-desc">${description}</p>
     `
 
+    const deco = document.createElement('div')
+    deco.className = 'card-deco'
+
+    card.appendChild(deco)
     card.appendChild(content)
     return card
 }
