@@ -18,6 +18,85 @@ body
     height: 100vh;
 }
 
+/* ─── Cards overlay (segunda tela — posição 1 do scroll) ────── */
+
+#cards-overlay
+{
+    position:        fixed;
+    inset:           0;
+    display:         flex;
+    align-items:     flex-end;
+    justify-content: center;
+    padding-bottom:  8vh;
+    pointer-events:  none;
+    z-index:         10;
+
+    opacity:   0;
+    transform: translateY(16px);
+    transition:
+        opacity   0.65s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#cards-overlay.is-visible
+{
+    opacity:        1;
+    transform:      translateY(0);
+    pointer-events: all;
+}
+
+.cards-row
+{
+    display:         flex;
+    flex-direction:  row;
+    gap:             46px;
+    align-items:     stretch;
+    justify-content: center;
+    width:           100%;
+    padding:         0 5vw;
+    box-sizing:      border-box;
+}
+
+/* Tablet: 3 colunas comprimidas */
+@media (max-width: 900px)
+{
+    .cards-row
+    {
+        gap: 12px;
+        padding: 0 4vw;
+    }
+
+    .glow-card
+    {
+        width: auto !important;
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}
+
+/* Mobile: coluna única empilhada */
+@media (max-width: 600px)
+{
+    #cards-overlay
+    {
+        align-items:   flex-end;
+        padding-bottom: 5vh;
+    }
+
+    .cards-row
+    {
+        flex-direction: column;
+        gap:            14px;
+        align-items:    center;
+        padding:        0 6vw;
+    }
+
+    .glow-card
+    {
+        width: 100% !important;
+    }
+}
+
 /* ─── Hero overlay ─────────────────────────────────────────── */
 
 #hero
