@@ -8,16 +8,25 @@ const REVEAL_MS  = 3000
 const HIDE_MS    = 250
 const EASING     = 'cubic-bezier(0.16, 1, 0.3, 1)'
 
+const GRAVIDADE_ICON = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="6" stroke-dasharray="2 2.5"/><circle cx="12" cy="12" r="10" stroke-dasharray="1.5 3"/></svg>`
+
+const PROFUNDIDADE_ICON = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L22 9 12 15 2 9z"/><path d="M2 14l10 6 10-6"/></svg>`
+
+const HORIZONTE_ICON = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="14" x2="22" y2="14"/><path d="M6 14a6 6 0 0 1 12 0"/></svg>`
+
 const CARDS_DATA = [
     {
+        icon:        GRAVIDADE_ICON,
         title:       'Gravidade',
         description: 'Experiências digitais que atraem atenção sem precisar gritar.'
     },
     {
+        icon:        PROFUNDIDADE_ICON,
         title:       'Profundidade',
         description: 'Interfaces visuais com presença, ritmo e atmosfera.'
     },
     {
+        icon:        HORIZONTE_ICON,
         title:       'Horizonte',
         description: 'Cada detalhe conduz o usuário para o próximo passo.'
     }
@@ -28,7 +37,14 @@ function init()
     const overlay = document.getElementById('cards-overlay')
     const row     = overlay.querySelector('.cards-row')
 
-    CARDS_DATA.forEach(data => row.appendChild(createGlowCard(data)))
+    CARDS_DATA.forEach((data, i) => {
+        row.appendChild(createGlowCard(data))
+        if (i < CARDS_DATA.length - 1) {
+            const divider = document.createElement('div')
+            divider.className = 'card-divider'
+            row.appendChild(divider)
+        }
+    })
     initGlowPointer()
 
     const getCards = () => [...row.querySelectorAll('.glow-card')]

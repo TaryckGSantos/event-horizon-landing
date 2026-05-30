@@ -1,32 +1,22 @@
 /* ─── Spotlight / Glow Card ─────────────────────────────────── */
 
 .glow-card {
-    /* ── Base visual ── */
-    background: linear-gradient(
-        135deg,
-        rgba(26, 18, 48, 0.80)  0%,
-        rgba(15, 10, 30, 0.78) 40%,
-        rgba(28, 15, 53, 0.80) 100%
-    );
-    border:        1.5px solid rgba(140, 80, 255, 0.25);
+    /* ── Estado padrão: superfície levíssima, quase invisível ── */
+    background:    rgba(20, 10, 40, 0.18);
+    border:        1px solid transparent;
     border-radius: 14px;
-    box-shadow:    0 1rem 2.5rem -1rem rgba(0, 0, 0, 0.7);
 
     /* ── Layout ── */
-    position:       relative;
-    display:        flex;
-    flex-direction: column;
-    gap:            1rem;
-    padding:        2rem 1.75rem;
-    min-height:     42vh;
-    touch-action:   none;
-
-    /* ── Glass ── */
-    backdrop-filter:         blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    position:        relative;
+    display:         flex;
+    flex-direction:  column;
+    align-items:     center;
+    padding:         2rem 1.75rem;
+    min-height:      42vh;
+    touch-action:    none;
 }
 
-/* ── Border glow — pontual, concentrado no cursor ── */
+/* ── Border glow — pontual, concentrado no cursor (preservado integralmente) ── */
 .glow-card::before {
     pointer-events: none;
     content:        "";
@@ -44,22 +34,22 @@
     );
     background-size:     calc(100% + 3px) calc(100% + 3px);
     background-position: -1.5px -1.5px;
+    background-repeat:   no-repeat;
 
-    /* revela apenas a faixa da borda */
-    mask:              linear-gradient(transparent, transparent),
-                       linear-gradient(white, white);
+    mask:              linear-gradient(white, white) padding-box,
+                       linear-gradient(white, white) border-box;
     mask-clip:         padding-box, border-box;
-    mask-composite:    intersect;
-    -webkit-mask:      linear-gradient(transparent, transparent),
-                       linear-gradient(white, white);
+    mask-composite:    exclude;
+    -webkit-mask:      linear-gradient(white, white) padding-box,
+                       linear-gradient(white, white) border-box;
     -webkit-mask-clip: padding-box, border-box;
-    -webkit-mask-composite: source-in;
+    -webkit-mask-composite: xor;
 
     opacity:    var(--glow-opacity, 0);
     transition: opacity 0.38s ease-out;
 }
 
-/* ── Brilho interno — ambient muito sutil ── */
+/* ── Brilho interno — ambient muito sutil (preservado integralmente) ── */
 .glow-card::after {
     pointer-events: none;
     content:        "";
@@ -73,9 +63,30 @@
         rgba(131, 90, 255, 0.224)  0%,
         transparent               65%
     );
+    background-repeat: no-repeat;
 
     opacity:    var(--glow-opacity, 0);
     transition: opacity 0.28s ease-out;
+}
+
+/* ── Ícone circular com glow radial roxo ── */
+.card-icon-wrap {
+    width:           48px;
+    height:          48px;
+    border-radius:   50%;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    flex-shrink:     0;
+    position:        relative;
+    z-index:         2;
+    background: radial-gradient(
+        circle,
+        rgba(140, 70, 255, 0.5)  0%,
+        rgba(80,  30, 180, 0.2) 50%,
+        transparent             70%
+    );
+    color: rgba(200, 160, 255, 0.9);
 }
 
 /* ── Conteúdo ── */
@@ -85,63 +96,57 @@
     gap:            0.6rem;
     position:       relative;
     z-index:        2;
+    margin-top:     20px;
+    text-align:     center;
 }
 
 .card-title {
     font-family:    'Tenor Sans', sans-serif;
-    font-size:      1.05rem;
-    font-weight:    400;
-    letter-spacing: 0.08em;
-    color:          #ffffff;
+    font-size:      16px;
+    font-weight:    500;
+    letter-spacing: 0.5px;
+    color:          rgba(240, 230, 255, 0.95);
     margin:         0;
     line-height:    1.2;
 }
 
 .card-desc {
     font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
-    font-size:   0.82rem;
+    font-size:   13px;
     font-weight: 300;
     line-height: 1.7;
-    color:       rgba(255, 255, 255, 0.60);
+    color:       rgba(160, 140, 200, 0.65);
     margin:      0;
 }
 
-/* ── Decoração estática do card ── */
+/* ── Glow de base — névoa radial na parte inferior do card ── */
 .card-deco {
-    position:       absolute;
-    inset:          0;
-    border-radius:  14px;
-    overflow:       hidden;
-    pointer-events: none;
+    position:        absolute;
+    bottom:          0;
+    left:            20%;
+    right:           20%;
+    height:          60px;
+    pointer-events:  none;
+    background: radial-gradient(
+        ellipse at 50% 100%,
+        rgba(120, 60, 220, 0.2) 0%,
+        transparent             70%
+    );
 }
 
-/* linha metálica no topo */
-.card-deco::before {
-    content:  "";
-    position: absolute;
-    top:      0;
-    left:     0;
-    right:    0;
-    height:   1px;
+/* ── Divisor vertical entre cards ── */
+.card-divider {
+    width:       1px;
+    align-self:  stretch;
+    flex-shrink: 0;
     background: linear-gradient(
-        90deg,
+        180deg,
         transparent,
-        rgba(160, 100, 255, 0.6),
+        rgba(100, 60, 200, 0.2),
         transparent
     );
 }
 
-/* reflexo de canto superior direito */
-.card-deco::after {
-    content:  "";
-    position: absolute;
-    top:      -60px;
-    right:    -60px;
-    width:    120px;
-    height:   120px;
-    background: radial-gradient(
-        circle,
-        rgba(120, 60, 220, 0.15) 0%,
-        transparent              70%
-    );
+@media (max-width: 600px) {
+    .card-divider { display: none; }
 }
