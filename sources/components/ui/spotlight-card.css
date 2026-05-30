@@ -3,7 +3,7 @@
 .glow-card {
     /* ── Estado padrão: superfície levíssima, quase invisível ── */
     background:    rgba(20, 10, 40, 0.18);
-    border:        1px solid transparent;
+    border:        1.5px solid transparent;
     border-radius: 14px;
 
     /* ── Layout ── */
@@ -16,14 +16,14 @@
     touch-action:    none;
 }
 
-/* ── Border glow — pontual, concentrado no cursor (preservado integralmente) ── */
+/* ── Border glow — pontual, concentrado no cursor ── */
 .glow-card::before {
     pointer-events: none;
     content:        "";
     position:       absolute;
-    inset:          -1.5px;
-    border:         1.5px solid transparent;
+    inset:          -1.5px;   /* alinha flush com a borda externa do card (border=1.5px) */
     border-radius:  14px;
+    padding:        1.5px;    /* define a largura do anel de glow; substitui o border anterior */
 
     background-image: radial-gradient(
         200px 200px
@@ -32,18 +32,18 @@
         rgba(210, 185, 255, 0.50) 45%,
         transparent               70%
     );
-    background-size:     calc(100% + 3px) calc(100% + 3px);
-    background-position: -1.5px -1.5px;
-    background-repeat:   no-repeat;
+    background-repeat: no-repeat;
 
-    mask:              linear-gradient(white, white) padding-box,
-                       linear-gradient(white, white) border-box;
-    mask-clip:         padding-box, border-box;
-    mask-composite:    exclude;
-    -webkit-mask:      linear-gradient(white, white) padding-box,
-                       linear-gradient(white, white) border-box;
-    -webkit-mask-clip: padding-box, border-box;
-    -webkit-mask-composite: xor;
+    /* Máscara: exibe apenas o anel de 1.5px (padding), oculta o interior (content-box).
+       exclude/destination-out é determinístico nos 4 lados — sem ambiguidade de clip. */
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
 
     opacity:    var(--glow-opacity, 0);
     transition: opacity 0.38s ease-out;
