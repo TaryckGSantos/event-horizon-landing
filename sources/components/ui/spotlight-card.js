@@ -160,4 +160,15 @@ export function initGlowPointer()
     }
 
     requestAnimationFrame(draw)
+
+    document.addEventListener('cameraPositionChange', (e) => {
+        if (e.detail.index !== 1) {
+            trail.length = 0
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            overCard = false
+            cards.forEach(c => c.style.cursor = 'auto')
+        } else {
+            cards.forEach(c => c.style.removeProperty('cursor'))
+        }
+    })
 }
