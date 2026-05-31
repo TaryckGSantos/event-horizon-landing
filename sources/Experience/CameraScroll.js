@@ -79,6 +79,12 @@ export default class CameraScroll
             document.dispatchEvent(new CustomEvent('heroExit'))
             setTimeout(() => this.startCamera(), HERO_EXIT_MS)
         }
+        else if(prevIndex === 1)
+        {
+            // saindo da posição 1: cards colapsam primeiro, câmera espera conclusão
+            document.dispatchEvent(new CustomEvent('cardsExit'))
+            document.addEventListener('cardsExitDone', () => this.startCamera(), { once: true })
+        }
         else
         {
             this.startCamera()

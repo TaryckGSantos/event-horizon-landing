@@ -55,22 +55,35 @@ function init()
         card.style.opacity  = '0'
     })
 
-    let revealTimer = null
-    let hideTimer   = null
-    let revealed    = false
+    let revealTimer  = null
+    let hideTimer    = null
+    let revealed     = false
+    let clearClipIds = []
 
     function reveal()
     {
+        clearClipIds.forEach(clearTimeout)
+        clearClipIds = []
+
         revealed = true
         overlay.classList.add('is-visible')
 
         const cards = getCards()
 
-        // Reset síncrono para o estado inicial
+        // Reset síncrono para o estado inicial (inclui propriedades da animação de saída)
         cards.forEach(card => {
             card.style.transition = 'none'
             card.style.clipPath   = 'inset(0 100% 0 0)'
             card.style.opacity    = '0'
+            card.style.filter     = ''
+
+            const icon    = card.querySelector('.card-icon-wrap')
+            const content = card.querySelector('.glow-card-content')
+            ;[icon, content].forEach(el => {
+                if (!el) return
+                el.style.transition = 'none'
+                el.style.opacity    = ''
+            })
         })
 
         // Força reflow para comprometer o estado inicial antes das transições
@@ -85,6 +98,11 @@ function init()
                 card.style.clipPath = 'inset(0 0% 0 0)'
                 card.style.opacity  = '1'
             }, i * 800)
+
+            // Remove o clip-path ao final da animação para restaurar renderização simétrica
+            clearClipIds.push(setTimeout(() => {
+                card.style.clipPath = ''
+            }, i * 800 + REVEAL_MS))
         })
     }
 
@@ -120,6 +138,60 @@ function init()
         } else if (revealed) {
             hide()
         }
+    })
+
+    document.addEventListener('cardsExit', () => {
+        clearTimeout(revealTimer)
+        clearTimeout(hideTimer)
+
+        if (!revealed) {
+            // Cards não estão visíveis — sinaliza conclusão imediata
+            document.dispatchEvent(new CustomEvent('cardsExitDone'))
+            return
+        }
+
+        const cards = getCards()
+
+        // Passo 1 — fade do conteúdo (ícone + texto)
+        cards.forEach(card => {
+            const icon    = card.querySelector('.card-icon-wrap')
+            const content = card.querySelector('.glow-card-content')
+            ;[icon, content].forEach(el => {
+                if (!el) return
+                el.style.transition = 'opacity 150ms ease'
+                el.style.opacity    = '0'
+            })
+        })
+
+        // Passo 2 — colapso em ordem inversa: direita → centro → esquerda
+        const EASING_OUT  = 'cubic-bezier(0.4, 0, 1, 1)'
+        const COLLAPSE_MS = 420
+        const STAGGER_MS  = 80
+        const ORDER       = [2, 1, 0]
+
+        setTimeout(() => {
+            ORDER.forEach((cardIdx, i) => {
+                const card = cards[cardIdx]
+                if (!card) return
+                setTimeout(() => {
+                    card.style.transition =
+                        `clip-path ${COLLAPSE_MS}ms ${EASING_OUT}, ` +
+                        `filter    ${COLLAPSE_MS}ms ${EASING_OUT}, ` +
+                        `opacity   ${COLLAPSE_MS}ms ${EASING_OUT}`
+                    card.style.clipPath = 'inset(50% 50%)'
+                    card.style.filter   = 'blur(6px)'
+                    card.style.opacity  = '0'
+                }, i * STAGGER_MS)
+            })
+
+            // Aguarda o último card terminar antes de sinalizar
+            const waitMs = STAGGER_MS * (ORDER.length - 1) + COLLAPSE_MS
+            setTimeout(() => {
+                revealed = false
+                overlay.classList.remove('is-visible')
+                document.dispatchEvent(new CustomEvent('cardsExitDone'))
+            }, waitMs)
+        }, 150)
     })
 }
 

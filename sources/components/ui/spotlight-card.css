@@ -24,7 +24,7 @@
     position:       absolute;
     inset:          -1.5px;   /* alinha flush com a borda externa do card (border=1.5px) */
     border-radius:  14px;
-    padding:        1.5px;    /* define a largura do anel de glow; substitui o border anterior */
+    padding:        1.0px;    /* define a largura do anel de glow; substitui o border anterior */
 
     background-image: radial-gradient(
         200px 200px
