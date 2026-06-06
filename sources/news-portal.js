@@ -189,6 +189,20 @@ function buildWidgets() {
     </div>`
 }
 
+// Saturno stroke-only, 20×20px, cor #7C3AED. IDs únicos por item evitam conflito global de máscara.
+function saturnSvg(i) {
+    const mid = `np-sm-${i}`
+    return `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">` +
+        `<defs><mask id="${mid}">` +
+        `<rect width="20" height="20" fill="white"/>` +
+        `<circle cx="10" cy="10" r="4.8" fill="black"/>` +
+        `</mask></defs>` +
+        `<ellipse cx="10" cy="10" rx="9" ry="3" stroke="rgba(124,58,237,0.45)" stroke-width="1.2" mask="url(#${mid})"/>` +
+        `<circle cx="10" cy="10" r="4.5" stroke="rgba(124,58,237,0.85)" stroke-width="1.2"/>` +
+        `<path d="M 1 11.8 Q 10 14.5 19 11.8" stroke="rgba(124,58,237,0.85)" stroke-width="1.2" fill="none" stroke-linecap="round"/>` +
+        `</svg>`
+}
+
 // --news-index alimenta animation-delay escalonado via CSS calc()
 function buildNewsList() {
     const items = NEWS.map((n, i) => `
@@ -198,7 +212,7 @@ function buildNewsList() {
                 <p class="np-news-title">${n.title}</p>
                 <span class="np-news-date">${n.date}</span>
             </div>
-            <span class="np-news-arrow">&#8594;</span>
+            <span class="np-news-arrow">${saturnSvg(i)}</span>
         </li>
     `).join('')
     return `<section id="np-news"><ul class="np-news-list">${items}</ul></section>`

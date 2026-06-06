@@ -145,7 +145,7 @@
 #np-drawer {
     position: fixed;
     inset: 0;
-    z-index: 1002;
+    z-index: 1003;
     pointer-events: none;
     opacity: 0;
     transition: opacity 280ms ease;
@@ -212,14 +212,14 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    z-index: 1001;
+    z-index: 1002;
 }
 
 /* ── Animação 5: widgets entram de cima ───────────────────────── */
 .np-widget {
     border: 1px solid rgba(139, 92, 246, 0.2);
     box-shadow: 0 0 12px rgba(139, 92, 246, 0.08);
-    background: transparent;
+    background: #08060f;
     padding: 14px 18px;
     border-radius: 8px;
     min-width: 160px;
@@ -277,21 +277,79 @@
     list-style: none;
     margin: 0;
     padding: 0;
+    overflow: hidden;
+    contain: layout paint;
 }
 
 /* ── Animação 5: notícias entram escalonadas da direita ───────── */
 .np-news-item {
     position: relative;
-    padding: 18px 20px 18px 0;
+    /* padding-left fixo garante que a barra nunca sobreponha texto */
+    padding: 18px 0 18px 18px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid transparent;
+    box-sizing: border-box;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
     overflow: hidden;
     opacity: 0;
     transform: translateX(8px);
+    transition: background 520ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.np-news-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 28px;
+    bottom: 0;
+    left: 0;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    transition: opacity 320ms ease;
+}
+
+.np-news-item:hover {
+    background:
+        radial-gradient(
+            circle at 82% 28%,
+            rgba(76, 29, 149, 0.10) 0%,
+            rgba(76, 29, 149, 0.045) 26%,
+            transparent 56%
+        ),
+        linear-gradient(
+            135deg,
+            rgba(8, 8, 16, 0.82) 0%,
+            rgba(12, 10, 24, 0.75) 55%,
+            rgba(18, 12, 36, 0.65) 100%
+        );
+    border-color: rgba(255, 255, 255, 0.055);
+    box-shadow:
+        0 0 0 1px rgba(76, 29, 149, 0.025),
+        0 8px 22px rgba(0, 0, 0, 0.18),
+        0 0 16px rgba(76, 29, 149, 0.045),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    border-radius: 8px;
+    transition: background 520ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.np-news-item:not(:hover) {
+    transition: background 240ms ease-in,
+                border-color 240ms ease-in,
+                box-shadow 240ms ease-in,  
+                backdrop-filter 240ms ease-in;
+}
+
+.np-news-item:hover::after {
+    opacity: 0.02;
 }
 
 #news-portal.is-visible .np-news-item {
@@ -314,19 +372,21 @@
     width: 3px;
     background: #7C3AED;
     transform: scaleY(0);
-    transform-origin: top;
+    transform-origin: center;
     /* transição de SAÍDA do hover */
-    transition: transform 180ms ease-in;
+    transition: transform 240ms ease-in;
 }
 
 .np-news-item:hover::before {
     transform: scaleY(1);
-    /* transição de ENTRADA no hover */
-    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    /* transição de ENTRADA no hover — cresce do centro para fora */
+    transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .np-news-item-body {
     flex: 1;
+    /* espaço à direita para a seta absoluta não cobrir o texto */
+    padding-right: 32px;
 }
 
 .np-news-tag {
@@ -336,9 +396,19 @@
     color: #7C3AED;
     margin-bottom: 6px;
     display: block;
+    transform: translateX(0);
+    /* exit: simultâneo, sem delay */
+    transition: transform 200ms ease-in, opacity 200ms ease-in;
 }
 
-/* ── Animação 1: título desliza para a direita no hover ───────── */
+.np-news-item:hover .np-news-tag {
+    opacity: 0.6;
+    transform: translateX(6px);
+    /* enter: 380ms, chega primeiro */
+    transition: transform 380ms ease-out, opacity 240ms ease-in;
+}
+
+/* ── Animação 1: título — move mais, chega levemente depois ───── */
 .np-news-title {
     font-size: 17px;
     color: rgba(255, 255, 255, 0.88);
@@ -346,40 +416,54 @@
     line-height: 1.4;
     margin: 0 0 4px;
     transform: translateX(0);
-    /* transição de SAÍDA do hover */
-    transition: color 180ms ease-in, transform 180ms ease-in;
+    /* exit: simultâneo, sem delay */
+    transition: color 240ms ease-in, transform 240ms ease-in;
 }
 
 .np-news-item:hover .np-news-title {
     color: #fff;
-    transform: translateX(6px);
-    /* transição de ENTRADA no hover */
-    transition: color 180ms ease-out, transform 240ms ease-out;
+    transform: translateX(10px);
+    /* enter: 460ms, delay 30ms — chega levemente depois da tag */
+    transition: color 240ms ease-out, transform 460ms ease-out 30ms;
 }
 
+/* ── Animação 1: data — move o mínimo, chega por último ──────── */
 .np-news-date {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.3);
     margin-top: 4px;
     display: block;
+    transform: translateX(0);
+    /* exit: simultâneo, sem delay */
+    transition: transform 240ms ease-in, color 240ms ease-in;
 }
 
-/* ── Animação 1: seta desliza da esquerda no hover ────────────── */
+.np-news-item:hover .np-news-date {
+    opacity: 0.6;
+    transform: translateX(4px);
+    transition: transform 340ms ease-out 60ms, opacity 340ms ease-out 60ms;
+}
+
+/* ── Ícone de Saturno — absoluto, nunca altera layout do texto ── */
 .np-news-arrow {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.5);
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0;
-    transform: translateX(-6px);
-    flex-shrink: 0;
-    /* transição de SAÍDA do hover */
-    transition: opacity 180ms ease-in, transform 180ms ease-in;
+    /* translateY(-50%) mantém o centramento vertical */
+    transform: translateY(-50%) translateX(-4px);
+    /* exit: simultâneo, sem delay */
+    transition: opacity 240ms ease-in, transform 240ms ease-in;
 }
 
 .np-news-item:hover .np-news-arrow {
     opacity: 1;
-    transform: translateX(0);
-    /* transição de ENTRADA no hover — com delay de 60ms */
-    transition: opacity 200ms ease-out 60ms, transform 200ms ease-out 60ms;
+    transform: translateY(-50%) translateX(0);
+    /* enter: 300ms, delay 80ms — aparece por último */
+    transition: opacity 300ms ease-out 80ms, transform 300ms ease-out 80ms;
 }
 
 /* ─── Modal de artigo ────────────────────────────────────────── */
@@ -387,7 +471,7 @@
 #np-modal {
     position: fixed;
     inset: 0;
-    z-index: 1002;
+    z-index: 1003;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -629,7 +713,7 @@
     }
 
     .np-news-item {
-        padding: 16px 0;
+        padding: 16px 0 16px 18px;
     }
 
     #np-modal {
