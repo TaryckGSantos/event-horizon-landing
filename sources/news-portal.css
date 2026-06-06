@@ -41,8 +41,37 @@
     padding: 0;
 }
 
+/* ── Animação 5: entrada escalonada dos itens do menu ─────────── */
 #np-nav ul li {
     position: relative;
+    opacity: 0;
+    transform: translateX(-12px);
+}
+
+#news-portal.is-visible #np-nav ul li {
+    animation: navItemIn 320ms ease-out both;
+    animation-delay: calc(120ms + var(--item-index, 0) * 40ms);
+}
+
+/* ── Animação 4: indicador de item ativo (pseudo-elemento) ────── */
+#np-nav ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #7C3AED;
+    transform: scaleY(0);
+    transform-origin: top;
+    /* transição de SAÍDA do estado ativo */
+    transition: transform 160ms ease-in;
+}
+
+#np-nav ul li.active::before {
+    transform: scaleY(1);
+    /* transição de ENTRADA no estado ativo */
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1) 80ms;
 }
 
 #np-nav ul li a {
@@ -53,7 +82,8 @@
     letter-spacing: 0.06em;
     color: rgba(255, 255, 255, 0.45);
     text-decoration: none;
-    transition: color 180ms ease, opacity 180ms ease, transform 200ms ease;
+    /* transição de SAÍDA do estado ativo */
+    transition: color 160ms ease-in, transform 200ms ease;
     cursor: pointer;
 }
 
@@ -64,8 +94,24 @@
 
 #np-nav ul li.active a {
     color: rgba(255, 255, 255, 1);
-    border-left: 2px solid #7C3AED;
-    padding-left: 22px;
+    /* transição de ENTRADA no estado ativo */
+    transition: color 220ms ease-out 60ms, transform 200ms ease;
+}
+
+/* ── Flash no clique do item ──────────────────────────────────── */
+#np-nav ul li.nav-flash {
+    animation: navFlash 400ms ease forwards;
+}
+
+@keyframes navFlash {
+    0%   { background: transparent; }
+    30%  { background: rgba(124, 58, 237, 0.12); }
+    100% { background: transparent; }
+}
+
+@keyframes navItemIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 
 /* ─── Hamburguer mobile ────────────────────────────────────────── */
@@ -169,6 +215,7 @@
     z-index: 1001;
 }
 
+/* ── Animação 5: widgets entram de cima ───────────────────────── */
 .np-widget {
     border: 1px solid rgba(139, 92, 246, 0.2);
     box-shadow: 0 0 12px rgba(139, 92, 246, 0.08);
@@ -177,20 +224,18 @@
     border-radius: 8px;
     min-width: 160px;
     opacity: 0;
-    transform: translateY(8px);
-    animation: widgetIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    transform: translateY(-8px);
+    animation: widgetIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.np-widget:nth-child(1) { animation-delay: 0ms; }
-.np-widget:nth-child(2) { animation-delay: 80ms; }
-.np-widget:nth-child(3) { animation-delay: 160ms; }
-.np-widget:nth-child(4) { animation-delay: 240ms; }
+.np-widget:nth-child(1) { animation-delay: 120ms; }
+.np-widget:nth-child(2) { animation-delay: 200ms; }
+.np-widget:nth-child(3) { animation-delay: 280ms; }
+.np-widget:nth-child(4) { animation-delay: 360ms; }
 
 @keyframes widgetIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .np-widget-label {
@@ -234,6 +279,7 @@
     padding: 0;
 }
 
+/* ── Animação 5: notícias entram escalonadas da direita ───────── */
 .np-news-item {
     position: relative;
     padding: 18px 20px 18px 0;
@@ -243,32 +289,44 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    transition: background 180ms ease;
     overflow: hidden;
+    opacity: 0;
+    transform: translateX(8px);
 }
 
+#news-portal.is-visible .np-news-item {
+    animation: newsItemIn 280ms ease-out both;
+    animation-delay: calc(120ms + var(--news-index, 0) * 50ms);
+}
+
+@keyframes newsItemIn {
+    from { opacity: 0; transform: translateX(8px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Animação 1: linha roxa lateral via scaleY ────────────────── */
 .np-news-item::before {
     content: '';
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 0;
+    width: 3px;
     background: #7C3AED;
-    transition: width 180ms ease;
+    transform: scaleY(0);
+    transform-origin: top;
+    /* transição de SAÍDA do hover */
+    transition: transform 180ms ease-in;
 }
 
 .np-news-item:hover::before {
-    width: 3px;
-}
-
-.np-news-item:hover {
-    padding-left: 10px;
+    transform: scaleY(1);
+    /* transição de ENTRADA no hover */
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .np-news-item-body {
     flex: 1;
-    transition: padding 180ms ease;
 }
 
 .np-news-tag {
@@ -280,18 +338,23 @@
     display: block;
 }
 
+/* ── Animação 1: título desliza para a direita no hover ───────── */
 .np-news-title {
     font-size: 17px;
     color: rgba(255, 255, 255, 0.88);
     font-weight: 400;
     line-height: 1.4;
     margin: 0 0 4px;
-    transition: color 180ms ease, opacity 180ms ease;
+    transform: translateX(0);
+    /* transição de SAÍDA do hover */
+    transition: color 180ms ease-in, transform 180ms ease-in;
 }
 
 .np-news-item:hover .np-news-title {
     color: #fff;
-    opacity: 1;
+    transform: translateX(6px);
+    /* transição de ENTRADA no hover */
+    transition: color 180ms ease-out, transform 240ms ease-out;
 }
 
 .np-news-date {
@@ -301,16 +364,22 @@
     display: block;
 }
 
+/* ── Animação 1: seta desliza da esquerda no hover ────────────── */
 .np-news-arrow {
     font-size: 16px;
     color: rgba(255, 255, 255, 0.5);
     opacity: 0;
-    transition: opacity 150ms ease;
+    transform: translateX(-6px);
     flex-shrink: 0;
+    /* transição de SAÍDA do hover */
+    transition: opacity 180ms ease-in, transform 180ms ease-in;
 }
 
 .np-news-item:hover .np-news-arrow {
     opacity: 1;
+    transform: translateX(0);
+    /* transição de ENTRADA no hover — com delay de 60ms */
+    transition: opacity 200ms ease-out 60ms, transform 200ms ease-out 60ms;
 }
 
 /* ─── Modal de artigo ────────────────────────────────────────── */
@@ -325,11 +394,11 @@
     padding: 24px;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 280ms cubic-bezier(0.22, 1, 0.36, 1);
     backdrop-filter: blur(0px);
     -webkit-backdrop-filter: blur(0px);
     background: rgba(0, 0, 0, 0);
-    transition: opacity 280ms ease, backdrop-filter 280ms ease, background 280ms ease;
+    /* transição do backdrop */
+    transition: opacity 220ms ease, backdrop-filter 220ms ease, background 220ms ease;
 }
 
 #np-modal.open {
@@ -340,6 +409,7 @@
     background: rgba(0, 0, 0, 0.75);
 }
 
+/* ── Animação 2: card do modal ────────────────────────────────── */
 #np-modal-card {
     position: relative;
     max-width: 680px;
@@ -348,16 +418,32 @@
     border-radius: 12px;
     background: rgba(10, 8, 20, 0.85);
     padding: 40px;
-    transform: scale(0.96);
-    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
     max-height: 90vh;
     overflow-y: auto;
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
 }
 
-#np-modal.open #np-modal-card {
-    transform: scale(1);
+#np-modal-card.np-card-entering {
+    animation: modalCardEnter 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* ── Animação 3: saída do card ────────────────────────────────── */
+#np-modal-card.np-card-exiting {
+    animation: modalCardExit 220ms ease-in forwards;
+}
+
+@keyframes modalCardEnter {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes modalCardExit {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(12px) scale(0.96); }
+}
+
+/* ── Animação 2: imagem placeholder ──────────────────────────── */
 #np-modal-img {
     width: 100%;
     height: 180px;
@@ -367,6 +453,16 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    opacity: 0;
+}
+
+#np-modal-img.np-img-entering {
+    animation: imgFadeIn 200ms ease forwards;
+}
+
+@keyframes imgFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 #np-modal-img svg {
@@ -403,11 +499,21 @@
     margin-bottom: 0;
 }
 
+/* ── Animação 2: parágrafos do modal entram com stagger ───────── */
 #np-modal-body p {
     font-size: 15px;
     line-height: 1.8;
     color: rgba(255, 255, 255, 0.72);
     margin: 0 0 18px;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: paraFadeIn 280ms ease-out both;
+    animation-delay: var(--para-delay, 280ms);
+}
+
+@keyframes paraFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 #np-modal-close {
@@ -541,5 +647,16 @@
 
     #np-modal-img {
         height: 140px;
+    }
+}
+
+/* ─── prefers-reduced-motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    #news-portal,
+    #news-portal * {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
     }
 }

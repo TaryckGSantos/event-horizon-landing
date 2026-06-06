@@ -1,5 +1,5 @@
 // ─── News Portal — Tela 4 (DARK_STEP) ────────────────────────────
-// Ativado quando #fade-overlay recebe opacity 0.78 (DARK_STEP ativo).
+// Ativado quando #fade-overlay recebe opacity >= 0.7 (DARK_STEP ativo).
 // Usa MutationObserver para detectar mudanças sem tocar em CameraScroll.js.
 
 const NEWS = [
@@ -44,7 +44,7 @@ const NEWS = [
         readTime: 6,
         body: [
             'Um consórcio de 23 observatórios internacionais publicou o mapeamento completo do filamento cósmico denominado Saraswati II, estendendo-se por 1,4 bilhão de anos-luz — a maior estrutura já cartografada no universo observável. O trabalho envolveu dados de mais de 180.000 galáxias coletados ao longo de sete anos.',
-            'A estrutura revela padrões de distribuição de matéria escura consistentes com simulações do modelo ΛCDM, porém com uma densidade central 40% maior do que o esperado. Esse excesso, denominado pelos autores de "anomalia de Saraswati", pode requerer ajustes na constante cosmológica ou indicar a presença de partículas de matéria escura ainda não catalogadas.'
+            'A estrutura revela padrões de distribuição de matéria escura consistentes com simulações do modelo ΛCDM, porém com uma densidade central 40% maior do que o esperado. Esse excesso, denominado pelos autores de anomalia de Saraswati, pode requerer ajustes na constante cosmológica ou indicar a presença de partículas de matéria escura ainda não catalogadas.'
         ]
     },
     {
@@ -114,6 +114,9 @@ let isPortalVisible = false
 let showTimer = null
 let hideTimer = null
 
+// Timers das sequências de animação do modal (para cancelamento)
+let openModalTimers = []
+
 // ─── DOM ─────────────────────────────────────────────────────────
 
 function buildPortal() {
@@ -140,9 +143,10 @@ function buildPortal() {
     attachDrawerEvents()
 }
 
+// --item-index alimenta animation-delay escalonado via CSS calc()
 function buildNav() {
     const items = NAV_ITEMS.map((name, i) =>
-        `<li class="${i === 0 ? 'active' : ''}"><a href="#" data-nav="${name}">${name}</a></li>`
+        `<li class="${i === 0 ? 'active' : ''}" style="--item-index: ${i}"><a href="#" data-nav="${name}">${name}</a></li>`
     ).join('')
     return `<nav id="np-nav"><ul>${items}</ul></nav>`
 }
@@ -180,14 +184,15 @@ function buildWidgets() {
         </div>
         <div class="np-widget">
             <span class="np-widget-label">Temperatura Média</span>
-            <span class="np-widget-value">−270.45 °C</span>
+            <span class="np-widget-value">-270.45 C</span>
         </div>
     </div>`
 }
 
+// --news-index alimenta animation-delay escalonado via CSS calc()
 function buildNewsList() {
     const items = NEWS.map((n, i) => `
-        <li class="np-news-item" data-index="${i}">
+        <li class="np-news-item" data-index="${i}" style="--news-index: ${i}">
             <div class="np-news-item-body">
                 <span class="np-news-tag">${n.tag}</span>
                 <p class="np-news-title">${n.title}</p>
@@ -213,14 +218,23 @@ function buildModal() {
     </div>`
 }
 
-// ─── Eventos de navegação ─────────────────────────────────────────
+// ─── Animação 4: navegação com flash e indicador animado ──────────
 
 function attachNavEvents() {
     document.querySelectorAll('#np-nav a').forEach(a => {
         a.addEventListener('click', e => {
             e.preventDefault()
-            document.querySelectorAll('#np-nav li').forEach(li => li.classList.remove('active'))
-            a.closest('li').classList.add('active')
+            const li = a.closest('li')
+
+            // Flash de fundo no item clicado
+            li.classList.remove('nav-flash')
+            void li.offsetWidth // força reflow para reiniciar a animação
+            li.classList.add('nav-flash')
+            li.addEventListener('animationend', () => li.classList.remove('nav-flash'), { once: true })
+
+            // Troca o item ativo (o ::before faz scaleY com transition)
+            document.querySelectorAll('#np-nav li').forEach(el => el.classList.remove('active'))
+            li.classList.add('active')
         })
     })
 }
@@ -277,7 +291,6 @@ function startCountdown() {
     const el = document.getElementById('np-w-countdown')
     if (!el) return
 
-    // Próximo eclipse solar: 12 de agosto de 2026
     const target = new Date('2026-08-12T17:00:00Z')
 
     function updateCountdown() {
@@ -304,21 +317,80 @@ function attachNewsEvents() {
     })
 }
 
+// ─── Animações 2 e 3: abertura e fechamento do modal ─────────────
+
 function openModal(news) {
     const modal = document.getElementById('np-modal')
+    const card  = document.getElementById('np-modal-card')
+    const img   = document.getElementById('np-modal-img')
+    const body  = document.getElementById('np-modal-body')
+
+    // Cancela timers de abertura pendentes (re-abertura rápida)
+    openModalTimers.forEach(clearTimeout)
+    openModalTimers = []
+
+    // Reseta estado do card para a próxima abertura
+    card.classList.remove('np-card-entering', 'np-card-exiting')
+    img.classList.remove('np-img-entering')
+
+    // Preenche conteúdo
     document.getElementById('np-modal-tag').textContent   = news.tag
     document.getElementById('np-modal-title').textContent = news.title
-    document.getElementById('np-modal-meta').textContent  = `${news.date}  •  ${news.readTime} min de leitura`
-
-    const img = document.getElementById('np-modal-img')
-    img.style.background = `linear-gradient(135deg, #1a0533 0%, #0d1f4a 100%)`
+    document.getElementById('np-modal-meta').textContent  = `${news.date}  -  ${news.readTime} min de leitura`
+    img.style.background = 'linear-gradient(135deg, #1a0533 0%, #0d1f4a 100%)'
     img.innerHTML = ICONS[news.icon] || ''
 
-    const body = document.getElementById('np-modal-body')
-    body.innerHTML = news.body.map(p => `<p>${p}</p>`).join('')
+    // Parágrafos com delay escalonado via CSS custom property
+    // Para 1: 60ms (card start) + 220ms = 280ms
+    // Para 2: 280ms + 60ms = 340ms
+    body.innerHTML = news.body.map((p, i) =>
+        `<p style="--para-delay: ${280 + i * 60}ms">${p}</p>`
+    ).join('')
 
+    // t=0: abre backdrop (fade 220ms via CSS transition)
     modal.classList.add('open')
     modal.setAttribute('aria-hidden', 'false')
+
+    // t=60ms: card entra (380ms, easing spring)
+    openModalTimers.push(setTimeout(() => {
+        card.classList.add('np-card-entering')
+    }, 60))
+
+    // t=240ms: imagem faz fade in (200ms)
+    openModalTimers.push(setTimeout(() => {
+        img.classList.add('np-img-entering')
+    }, 240))
+}
+
+function closeModal() {
+    const modal = document.getElementById('np-modal')
+    const card  = document.getElementById('np-modal-card')
+
+    if (!modal.classList.contains('open')) return
+
+    // Cancela timers de abertura pendentes
+    openModalTimers.forEach(clearTimeout)
+    openModalTimers = []
+
+    // Bloqueia interação imediatamente
+    modal.style.pointerEvents = 'none'
+
+    // t=0: card faz exit animation (220ms ease-in)
+    card.classList.remove('np-card-entering')
+    card.classList.add('np-card-exiting')
+
+    // t=220ms: remove .open — backdrop faz fade out via CSS transition (220ms)
+    setTimeout(() => {
+        modal.classList.remove('open')
+        modal.setAttribute('aria-hidden', 'true')
+        modal.style.pointerEvents = '' // devolve controle ao CSS (base: pointer-events: none)
+
+        // t=220+250ms: limpa estado do card para próxima abertura
+        setTimeout(() => {
+            card.classList.remove('np-card-exiting')
+            card.classList.remove('np-card-entering')
+        }, 250)
+    }, 220)
 }
 
 function attachModalEvents() {
@@ -335,29 +407,21 @@ function attachModalEvents() {
     })
 }
 
-function closeModal() {
-    const modal = document.getElementById('np-modal')
-    modal.classList.remove('open')
-    modal.setAttribute('aria-hidden', 'true')
-}
-
 // ─── Mostrar / ocultar portal ─────────────────────────────────────
+
+function resetAnimation(el) {
+    el.style.animationName = 'none'
+    void el.offsetWidth
+    el.style.animationName = ''
+}
 
 function showPortal() {
     const portal = document.getElementById('news-portal')
     if (!portal) return
     isPortalVisible = true
 
-    // Reinicia animações de widgets removendo e reinserindo o elemento
-    const widgets = document.getElementById('np-widgets')
-    if (widgets) {
-        widgets.querySelectorAll('.np-widget').forEach(w => {
-            w.style.animationName = 'none'
-            // Força reflow para reiniciar animação
-            void w.offsetWidth
-            w.style.animationName = ''
-        })
-    }
+    // Reinicia animação dos widgets (animação está hardcoded no .np-widget, não no is-visible)
+    document.querySelectorAll('.np-widget').forEach(resetAnimation)
 
     portal.classList.add('is-visible')
     portal.setAttribute('aria-hidden', 'false')
@@ -387,7 +451,6 @@ function watchFadeOverlay() {
             if (!isPortalVisible && !showTimer) {
                 showTimer = setTimeout(() => {
                     showTimer = null
-                    // Confirma que o overlay ainda está escuro antes de mostrar
                     const currentOpacity = parseFloat(document.getElementById('fade-overlay').style.opacity) || 0
                     if (currentOpacity >= 0.7) showPortal()
                 }, 550)
