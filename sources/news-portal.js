@@ -208,6 +208,7 @@ function buildNewsList() {
     const items = NEWS.map((n, i) => `
         <li class="np-news-item" data-index="${i}" style="--news-index: ${i}">
             <span class="np-news-glow" aria-hidden="true"></span>
+            <span class="np-news-border" aria-hidden="true"></span>
 
             <div class="np-news-item-body">
                 <span class="np-news-tag">${n.tag}</span>
@@ -224,12 +225,14 @@ function buildModal() {
     return `<div id="np-modal" role="dialog" aria-modal="true">
         <div id="np-modal-card">
             <button id="np-modal-close" aria-label="Fechar">&times;</button>
-            <div id="np-modal-img"></div>
-            <div id="np-modal-sep"></div>
-            <span id="np-modal-tag"></span>
-            <h2 id="np-modal-title"></h2>
-            <p id="np-modal-meta"></p>
-            <div id="np-modal-body"></div>
+            <div id="np-modal-scroll">
+                <div id="np-modal-img"></div>
+                <div id="np-modal-sep"></div>
+                <span id="np-modal-tag"></span>
+                <h2 id="np-modal-title"></h2>
+                <p id="np-modal-meta"></p>
+                <div id="np-modal-body"></div>
+            </div>
         </div>
     </div>`
 }
@@ -366,6 +369,7 @@ function openModal(news) {
     // t=0: abre backdrop (fade 220ms via CSS transition)
     modal.classList.add('open')
     modal.setAttribute('aria-hidden', 'false')
+    document.body.style.overflow = 'hidden'
 
     // t=60ms: card entra (380ms, easing spring)
     openModalTimers.push(setTimeout(() => {
@@ -399,6 +403,7 @@ function closeModal() {
     setTimeout(() => {
         modal.classList.remove('open')
         modal.setAttribute('aria-hidden', 'true')
+        document.body.style.overflow = ''
         modal.style.pointerEvents = '' // devolve controle ao CSS (base: pointer-events: none)
 
         // t=220+250ms: limpa estado do card para próxima abertura
@@ -411,6 +416,7 @@ function closeModal() {
 
 function attachModalEvents() {
     const modal = document.getElementById('np-modal')
+    const card  = document.getElementById('np-modal-card')
 
     document.getElementById('np-modal-close').addEventListener('click', closeModal)
 
@@ -421,6 +427,11 @@ function attachModalEvents() {
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') closeModal()
     })
+
+    // Impede que scroll dentro do card propague para o container pai
+    const scroll = document.getElementById('np-modal-scroll')
+    scroll.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false })
+    scroll.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: false })
 }
 
 // ─── Mostrar / ocultar portal ─────────────────────────────────────

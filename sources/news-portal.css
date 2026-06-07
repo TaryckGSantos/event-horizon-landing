@@ -7,6 +7,13 @@
     inherits: false;
 }
 
+/* ─── Borda animada do modal de notícia ──────────────────────── */
+@property --np-modal-border-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
 #news-portal {
     position: fixed;
     inset: 0;
@@ -124,6 +131,16 @@
 @keyframes np-glow-border-spin {
     from { --np-border-angle: 0deg; }
     to   { --np-border-angle: 360deg; }
+}
+
+@keyframes np-modal-border-spin {
+    from { --np-modal-border-angle: 0deg; }
+    to   { --np-modal-border-angle: 360deg; }
+}
+
+@keyframes np-grid-pulse {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 0.85; }
 }
 
 /* ─── Hamburguer mobile ────────────────────────────────────────── */
@@ -288,29 +305,48 @@
 .np-news-list {
     list-style: none;
     margin: 0;
-    padding: 0;
-    overflow: hidden;
-    contain: layout paint;
+    padding: 0 4px;
+    overflow: visible;
 }
 
 /* ── Animação 5: notícias entram escalonadas da direita ───────── */
 .np-news-item {
     position: relative;
-    isolation: isolate;
     /* padding-left fixo garante que a barra nunca sobreponha texto */
     padding: 18px 0 18px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    border: 1px solid transparent;
     box-sizing: border-box;
     cursor: pointer;
     display: flex;
     align-items: center;
-    overflow: hidden;
     opacity: 0;
+    border-radius: 8px;
     transform: translateX(8px);
+    will-change: box-shadow, background;
     transition: background 520ms cubic-bezier(0.22, 1, 0.36, 1),
-                border-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
                 box-shadow 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.np-news-glow {
+    position: absolute;
+    inset: -3px;
+    border-radius: 11px;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: conic-gradient(
+        from var(--np-border-angle),
+        transparent              0%,
+        rgba(64, 47, 181, 0.85)  8%,
+        rgba(160, 153, 216, 0.4) 12%,
+        transparent              24%,
+        transparent              50%,
+        rgba(110, 27, 96, 0.8)   58%,
+        rgba(223, 162, 218, 0.4) 62%,
+        transparent              74%,
+        transparent             100%
+    );
+    filter: blur(7px);
+    transition: opacity 100ms ease-in;
 }
 
 .np-news-item::after {
@@ -318,54 +354,48 @@
     position: absolute;
     inset: 0;
     border-radius: 8px;
-    padding: 2px;
     z-index: 1;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 220ms ease-in;
-    background: conic-gradient(
-        from var(--np-border-angle),
-        transparent              0%,
-        rgba(64, 47, 181, 1)     8%,
-        rgba(160, 153, 216, 0.6) 12%,
-        transparent              24%,
-        transparent              50%,
-        rgba(110, 27, 96, 1)     58%,
-        rgba(223, 162, 218, 0.6) 62%,
-        transparent              74%,
-        transparent             100%
-    );
-    -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    filter: brightness(1.3);
+    background:
+        radial-gradient(
+            circle at 82% 28%,
+            rgba(4, 2, 10, 0.55) 0%,
+            rgba(4, 2, 10, 0.25) 26%,
+            transparent 56%
+        ),
+        linear-gradient(
+            135deg,
+            rgba(3, 2, 8, 0.97) 0%,
+            rgba(5, 3, 12, 0.96) 55%,
+            rgba(6, 4, 14, 0.95) 100%
+        );
+    transition: opacity 650ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.np-news-glow {
+.np-news-item:hover::after {
+    opacity: 1;
+}
+
+.np-news-border {
     position: absolute;
-    inset: 0;
+    inset: 0.5px;
     border-radius: 8px;
-    padding: 5px;
-    z-index: 0;
+    padding: 1.25px;
+    z-index: 2;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 300ms ease-in;
     background: conic-gradient(
         from var(--np-border-angle),
-        transparent                0%,
-        rgba(64, 47, 181, 0.9)     8%,
-        rgba(160, 153, 216, 0.4)   12%,
+        transparent                 0%,
+        rgba(64, 47, 181, 0.78)     8%,
+        rgba(160, 153, 216, 0.34)  12%,
         transparent                24%,
         transparent                50%,
-        rgba(110, 27, 96, 0.8)     58%,
-        rgba(223, 162, 218, 0.35)  62%,
+        rgba(110, 27, 96, 0.72)    58%,
+        rgba(223, 162, 218, 0.32)  62%,
         transparent                74%,
-        transparent                100%
+        transparent               100%
     );
     -webkit-mask:
         linear-gradient(#000 0 0) content-box,
@@ -375,46 +405,28 @@
         linear-gradient(#000 0 0) content-box,
         linear-gradient(#000 0 0);
     mask-composite: exclude;
-    filter: blur(7px);
+    filter: blur(0.35px) brightness(1.12);
+    transition: opacity 220ms ease-in;
 }
 
 .np-news-item:hover {
-    background:
-        /* vidro — clipped ao padding-box */
-        radial-gradient(
-            circle at 82% 28%,
-            rgba(76, 29, 149, 0.10) 0%,
-            rgba(76, 29, 149, 0.045) 26%,
-            transparent 56%
-        ) padding-box,
-        linear-gradient(
-            135deg,
-            rgba(8, 8, 16, 0.82) 0%,
-            rgba(12, 10, 24, 0.75) 55%,
-            rgba(18, 12, 36, 0.65) 100%
-        ) padding-box;
-    border-color: transparent;
     box-shadow:
-        0 0 0 1px rgba(76, 29, 149, 0.04),
+        0 0 3px 1px rgba(76, 29, 149, 0.08),
         0 8px 22px rgba(0, 0, 0, 0.18),
         0 0 22px rgba(64, 47, 181, 0.20),
         0 0 44px rgba(110, 27, 96, 0.14),
         inset 0 1px 0 rgba(255, 255, 255, 0.025);
-    border-radius: 8px;
     transition: background 520ms cubic-bezier(0.22, 1, 0.36, 1),
-                border-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
                 box-shadow 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .np-news-item:not(:hover) {
     transition: background 240ms ease-in,
-                border-color 240ms ease-in,
-                box-shadow 240ms ease-in,
-                backdrop-filter 240ms ease-in;
+                box-shadow 240ms ease-in;
 }
 
-.np-news-item:hover::after,
-.np-news-item:hover .np-news-glow {
+.np-news-item:hover .np-news-glow,
+.np-news-item:hover .np-news-border {
     opacity: 1;
     animation: np-glow-border-spin 4.8s linear infinite;
     transition: opacity 300ms ease-out;
@@ -455,7 +467,7 @@
 .np-news-item-body {
     flex: 1;
     position: relative;
-    z-index: 2;
+    z-index: 4;
     /* espaço à direita para a seta absoluta não cobrir o texto */
     padding-right: 32px;
 }
@@ -565,26 +577,70 @@
     background: rgba(0, 0, 0, 0.75);
 }
 
-/* ── Animação 2: card do modal ────────────────────────────────── */
+/* ── Card do modal — dark glass premium ───────────────────────── */
 #np-modal-card {
     position: relative;
     max-width: 680px;
     width: 100%;
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    border-radius: 12px;
-    background: rgba(10, 8, 20, 0.85);
-    padding: 40px;
-    max-height: 90vh;
-    overflow-y: auto;
+    border-radius: 18px;
+    background: rgba(8, 6, 18, 0.86);
+    backdrop-filter: blur(22px) saturate(1.2);
+    -webkit-backdrop-filter: blur(22px) saturate(1.2);
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.65),
+        0 0 40px rgba(124, 58, 237, 0.13),
+        0 0 80px rgba(110, 27, 96, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 0 60px rgba(139, 92, 246, 0.03);
+    clip-path: inset(0 round 18px);
     opacity: 0;
     transform: translateY(24px) scale(0.97);
+}
+
+#np-modal-scroll {
+    overflow-y: auto;
+    max-height: 90vh;
+    padding: 40px;
+}
+
+/* Anel de borda conic-gradient girante */
+#np-modal-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    padding: 1px;
+    background: conic-gradient(
+        from var(--np-modal-border-angle),
+        transparent 0%,
+        rgba(64, 47, 181, 0.65) 8%,
+        rgba(160, 153, 216, 0.28) 12%,
+        transparent 24%,
+        transparent 50%,
+        rgba(110, 27, 96, 0.55) 62%,
+        rgba(223, 162, 218, 0.22) 68%,
+        transparent 82%,
+        transparent 100%
+    );
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    z-index: 0;
+    pointer-events: none;
+    animation: np-modal-border-spin 8s linear infinite;
 }
 
 #np-modal-card.np-card-entering {
     animation: modalCardEnter 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── Animação 3: saída do card ────────────────────────────────── */
+/* ── Animação de saída do card ────────────────────────────────── */
 #np-modal-card.np-card-exiting {
     animation: modalCardExit 220ms ease-in forwards;
 }
@@ -599,17 +655,45 @@
     to   { opacity: 0; transform: translateY(12px) scale(0.96); }
 }
 
-/* ── Animação 2: imagem placeholder ──────────────────────────── */
+/* ── Painel visual do modal — tech/espacial ──────────────────── */
 #np-modal-img {
     width: 100%;
-    height: 180px;
-    border-radius: 8px;
+    height: 200px;
+    border-radius: 12px;
     margin-bottom: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     opacity: 0;
+    position: relative;
+}
+
+/* Grid sutil animado */
+#np-modal-img::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 20px 20px;
+    animation: np-grid-pulse 5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Glow radial na base */
+#np-modal-img::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: radial-gradient(ellipse at 50% 100%, rgba(124, 58, 237, 0.28) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 #np-modal-img.np-img-entering {
@@ -622,45 +706,61 @@
 }
 
 #np-modal-img svg {
-    opacity: 0.6;
+    position: relative;
+    z-index: 1;
+    opacity: 0.75;
+    filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.45));
 }
 
 #np-modal-sep {
     width: 100%;
     height: 1px;
-    background: rgba(124, 58, 237, 0.3);
-    margin: 20px 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.22),
+        rgba(124, 58, 237, 0.45),
+        rgba(255, 255, 255, 0.18),
+        transparent
+    );
+    margin: 22px 0;
+    border: none;
 }
 
 #np-modal-tag {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(124, 58, 237, 0.10);
+    border: 1px solid rgba(124, 58, 237, 0.28);
     font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #7C3AED;
-    margin-bottom: 10px;
-    display: block;
+    letter-spacing: 0.14em;
+    color: rgba(196, 181, 253, 0.95);
+    margin-bottom: 12px;
 }
 
 #np-modal-title {
     font-size: 26px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.95);
-    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.96);
+    line-height: 1.35;
     margin: 0 0 10px;
 }
 
 #np-modal-meta {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.28);
     margin-bottom: 0;
+    letter-spacing: 0.04em;
 }
 
 /* ── Animação 2: parágrafos do modal entram com stagger ───────── */
 #np-modal-body p {
     font-size: 15px;
-    line-height: 1.8;
-    color: rgba(255, 255, 255, 0.72);
-    margin: 0 0 18px;
+    line-height: 1.88;
+    color: rgba(255, 255, 255, 0.68);
+    margin: 0 0 20px;
     opacity: 0;
     transform: translateY(8px);
     animation: paraFadeIn 280ms ease-out both;
@@ -674,20 +774,25 @@
 
 #np-modal-close {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    font-size: 20px;
-    color: rgba(255, 255, 255, 0.5);
+    top: 14px;
+    right: 14px;
+    font-size: 17px;
+    color: rgba(255, 255, 255, 0.45);
     cursor: pointer;
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    border-radius: 8px;
     line-height: 1;
-    padding: 4px 8px;
-    transition: color 150ms ease;
+    padding: 6px 10px;
+    z-index: 1;
+    transition: color 150ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
 
 #np-modal-close:hover {
-    color: #fff;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(124, 58, 237, 0.12);
+    border-color: rgba(139, 92, 246, 0.38);
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
 }
 
 /* ─── Responsividade ────────────────────────────────────────── */
@@ -795,10 +900,19 @@
 
     #np-modal-card {
         border-radius: 0;
-        max-height: 100vh;
         height: 100%;
-        padding: 24px;
+        clip-path: inset(0 round 0);
+    }
+
+    #np-modal-scroll {
         overflow-y: auto;
+        max-height: 100vh;
+        padding: 24px;
+    }
+
+    #np-modal-card::before {
+        border-radius: 0;
+        animation: none;
     }
 
     #np-modal-img {
@@ -814,5 +928,14 @@
         animation-delay: 0ms !important;
         transition-duration: 0.01ms !important;
         transition-delay: 0ms !important;
+    }
+
+    #np-modal-card::before {
+        animation: none;
+    }
+
+    #np-modal-img::before {
+        animation: none;
+        opacity: 0.5;
     }
 }
