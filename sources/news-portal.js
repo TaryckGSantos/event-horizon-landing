@@ -207,6 +207,8 @@ function saturnSvg(i) {
 function buildNewsList() {
     const items = NEWS.map((n, i) => `
         <li class="np-news-item" data-index="${i}" style="--news-index: ${i}">
+            <span class="np-news-glow" aria-hidden="true"></span>
+
             <div class="np-news-item-body">
                 <span class="np-news-tag">${n.tag}</span>
                 <p class="np-news-title">${n.title}</p>
