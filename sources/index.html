@@ -7,11 +7,12 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Tenor+Sans&family=Cormorant+SC:wght@300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Tenor+Sans&family=Cormorant+SC:wght@300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
         <link rel="stylesheet" href="./components/ui/spotlight-card.css">
         <link rel="stylesheet" href="./style.css">
         <link rel="stylesheet" href="./news-portal.css">
+        <link rel="stylesheet" href="./phrase-transition.css">
     </head>
     <body>
         <div id="fade-overlay" style="
@@ -38,9 +39,14 @@
             <div class="cards-row"></div>
         </div>
 
+        <div id="phrase-transition" aria-hidden="true">
+            <p class="phrase-text">do silêncio, algo escapa</p>
+        </div>
+
         <script type="module" src="./index.js"></script>
         <script type="module" src="./hero.js"></script>
         <script type="module" src="./cards.js"></script>
+        <script type="module" src="./phrase-transition.js"></script>
         <script type="module" src="./news-portal.js"></script>
     </body>
 </html>

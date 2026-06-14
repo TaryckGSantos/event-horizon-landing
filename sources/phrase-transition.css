@@ -1,0 +1,27 @@
+/* ─── Phrase Transition (Tela 3 — buraco negro limpo) ─────────────── */
+
+#phrase-transition {
+    position:        fixed;
+    inset:           0;
+    display:         flex;
+    align-items:     flex-start;
+    justify-content: center;
+    padding-top:     12vh;
+    pointer-events:  none;
+    z-index:         12;
+}
+
+.phrase-text {
+    font-family:     'Cinzel', serif;
+    font-size:       clamp(1.1rem, 2.5vw, 1.6rem);
+    color:           rgba(255, 255, 255, 0.72);
+    letter-spacing:  0.12em;
+    font-weight:     400;
+    text-align:      center;
+    white-space:     nowrap;
+    margin:          0;
+}
+
+.phrase-char {
+    display: inline-block;
+}

@@ -133,8 +133,8 @@ function init()
         clearTimeout(hideTimer)
 
         if (index === 1) {
-            // Aguarda câmera chegar + buffer
-            revealTimer = setTimeout(reveal, CAMERA_MS + EXTRA_MS)
+            // Aguarda câmera chegar + buffer + delay pós-frase
+            revealTimer = setTimeout(reveal, CAMERA_MS + EXTRA_MS + 350)
         } else if (revealed) {
             hide()
         }

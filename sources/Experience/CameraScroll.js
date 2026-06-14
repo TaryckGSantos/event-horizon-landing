@@ -51,6 +51,7 @@ export default class CameraScroll
         this.transitioning   = false
         this.cameraActive    = false
         this.transitionStart = 0
+        this.scrollDir       = 1
 
         this.fromPosition = POSITIONS[0].position.clone()
         this.fromTarget   = POSITIONS[0].target.clone()
@@ -75,6 +76,7 @@ export default class CameraScroll
         if (this.transitioning) return
 
         const dir      = e.deltaY > 0 ? 1 : -1
+        this.scrollDir = dir
         const nextStep = this.scrollStep + dir
 
         if (nextStep < 0 || nextStep >= N_STEPS) return
@@ -92,18 +94,26 @@ export default class CameraScroll
         // Entrando no DARK_STEP
         if (nextStep === DARK_STEP)
         {
-            this._overlay(DARK_OPACITY)
-
             // Caso 1: vindo da Tela 3 normal para Tela 3 escura
-            // Não precisa mover a câmera, apenas escurece.
+            // Oculta a frase primeiro, depois escurece a tela.
             if (prevStep < DARK_STEP)
             {
-                setTimeout(() => { this.transitioning = false }, DARK_LOCK_MS)
+                document.dispatchEvent(new CustomEvent('phraseExit'))
+                const doFade = () => {
+                    this._overlay(DARK_OPACITY)
+                    setTimeout(() => { this.transitioning = false }, DARK_LOCK_MS)
+                }
+                const fadeFallback = setTimeout(doFade, 2200)
+                document.addEventListener('phraseExitDone', () => {
+                    clearTimeout(fadeFallback)
+                    doFade()
+                }, { once: true })
                 return
             }
 
             // Caso 2: vindo da Tela 5 para Tela 3 escura
             // Precisa voltar a câmera para a posição da Tela 3.
+            this._overlay(DARK_OPACITY)
             if (prevStep > DARK_STEP)
             {
                 this.fromPosition.copy(this.camera.modes.debug.instance.position)
@@ -157,6 +167,15 @@ export default class CameraScroll
             document.dispatchEvent(new CustomEvent('cardsExit'))
             document.addEventListener('cardsExitDone', () => this.startCamera(), { once: true })
         }
+        else if (prevStep === 2)
+        {
+            document.dispatchEvent(new CustomEvent('phraseExit'))
+            const fallback = setTimeout(() => this.startCamera(), 2000)
+            document.addEventListener('phraseExitDone', () => {
+                clearTimeout(fallback)
+                this.startCamera()
+            }, { once: true })
+        }
         else
         {
             this.startCamera()
@@ -169,7 +188,7 @@ export default class CameraScroll
         this.cameraActive    = true
 
         document.dispatchEvent(new CustomEvent('cameraPositionChange', {
-            detail: { index: this.currentIndex }
+            detail: { index: this.currentIndex, step: this.scrollStep, dir: this.scrollDir }
         }))
     }
 
