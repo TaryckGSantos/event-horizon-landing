@@ -132,7 +132,7 @@ function init()
         clearTimeout(revealTimer)
         clearTimeout(hideTimer)
 
-        if (index === 1) {
+        if (e.detail.step === 2) {
             // Aguarda câmera chegar + buffer + delay pós-frase
             revealTimer = setTimeout(reveal, CAMERA_MS + EXTRA_MS + 350)
         } else if (revealed) {

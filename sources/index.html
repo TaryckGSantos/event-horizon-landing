@@ -13,6 +13,7 @@
         <link rel="stylesheet" href="./style.css">
         <link rel="stylesheet" href="./news-portal.css">
         <link rel="stylesheet" href="./phrase-transition.css">
+        <link rel="stylesheet" href="./timeline.css">
     </head>
     <body>
         <div id="fade-overlay" style="
@@ -35,6 +36,18 @@
             </div>
         </div>
 
+        <!-- Tela 2.1 — Linha do tempo cósmica (antes dos cards) -->
+        <div id="timeline-overlay" aria-hidden="true">
+            <canvas id="timeline-canvas"></canvas>
+        </div>
+        <div id="tl-scroll-hint" aria-hidden="true">
+            <span>scroll</span>
+            <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+                <line x1="8" y1="2" x2="8" y2="14" stroke="rgba(170,140,255,0.42)" stroke-width="1.3" stroke-linecap="round"/>
+                <polyline points="4,11 8,15 12,11" stroke="rgba(170,140,255,0.42)" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+            </svg>
+        </div>
+
         <div id="cards-overlay" aria-hidden="true">
             <div class="cards-row"></div>
         </div>
@@ -43,6 +56,9 @@
             <p class="phrase-text">do silêncio, algo escapa</p>
         </div>
 
+        <!-- timeline.js carregado ANTES de index.js para que seu listener de wheel
+             seja registrado antes do CameraScroll (necessário para __timelineCapturing) -->
+        <script type="module" src="./timeline.js"></script>
         <script type="module" src="./index.js"></script>
         <script type="module" src="./hero.js"></script>
         <script type="module" src="./cards.js"></script>

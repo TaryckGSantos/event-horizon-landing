@@ -20,16 +20,21 @@ const POSITIONS = [
     }
 ]
 
-// Mapeamento: scrollStep → índice de posição de câmera
-// step 3 = Tela 3 escura — reutiliza câmera do step 2, sem movimento
-const STEP_TO_CAM = [0, 1, 2, 2, 3]
-const N_STEPS     = STEP_TO_CAM.length   // 5 passos no total
+// Steps:
+//  0 → cam 0: Hero (tela 1)
+//  1 → cam 1: Linha do tempo (tela 2.1) — NOVO
+//  2 → cam 1: Cards (tela 2.2) — mesma câmera, sem movimento
+//  3 → cam 2: Buraco negro limpo + frase (tela 3)
+//  4 → cam 2: Fade de entrada (tela 4) — DARK_STEP
+//  5 → cam 3: Portal de notícias (tela 5)
+const STEP_TO_CAM = [0, 1, 1, 2, 2, 3]
+const N_STEPS     = STEP_TO_CAM.length  // 6
 
 const DURATION     = 1.2
 const HERO_EXIT_MS = 620
-const DARK_STEP    = 3      // step que representa a Tela 3 escura
-const DARK_OPACITY = 0.78   // opacidade do overlay preto na Tela 3 escura
-const DARK_LOCK_MS = 600    // ms bloqueados enquanto o overlay anima
+const DARK_STEP    = 4
+const DARK_OPACITY = 0.78
+const DARK_LOCK_MS = 600
 
 function easeInOut(t)
 {
@@ -73,7 +78,8 @@ export default class CameraScroll
 
     onWheel(e)
     {
-        if (this.transitioning) return
+        if (this.transitioning)            return
+        if (window.__timelineCapturing)    return   // timeline controla o scroll
 
         const dir      = e.deltaY > 0 ? 1 : -1
         this.scrollDir = dir
@@ -87,17 +93,15 @@ export default class CameraScroll
         this.scrollStep    = nextStep
         this.transitioning = true
 
-        // Failsafe: garante que transitioning nunca fica preso indefinidamente
         clearTimeout(this._safetyTimer)
-        this._safetyTimer = setTimeout(() => { this.transitioning = false }, 2000)
+        this._safetyTimer = setTimeout(() => { this.transitioning = false }, 2500)
 
-        // Entrando no DARK_STEP
+        // ── Entrando no DARK_STEP ──────────────────────────────────────────────
         if (nextStep === DARK_STEP)
         {
-            // Caso 1: vindo da Tela 3 normal para Tela 3 escura
-            // Oculta a frase primeiro, depois escurece a tela.
             if (prevStep < DARK_STEP)
             {
+                // Vindo da frase (tela 3) → escurece. Oculta a frase primeiro.
                 document.dispatchEvent(new CustomEvent('phraseExit'))
                 const doFade = () => {
                     this._overlay(DARK_OPACITY)
@@ -111,26 +115,22 @@ export default class CameraScroll
                 return
             }
 
-            // Caso 2: vindo da Tela 5 para Tela 3 escura
-            // Precisa voltar a câmera para a posição da Tela 3.
+            // Vindo de baixo (portal) → overlay + movimento de câmera de volta
             this._overlay(DARK_OPACITY)
             if (prevStep > DARK_STEP)
             {
                 this.fromPosition.copy(this.camera.modes.debug.instance.position)
                 this.fromTarget.copy(this.camera.modes.debug.orbitControls.target)
-
                 this.toPosition.copy(POSITIONS[STEP_TO_CAM[DARK_STEP]].position)
                 this.toTarget.copy(POSITIONS[STEP_TO_CAM[DARK_STEP]].target)
-
                 this.currentIndex = STEP_TO_CAM[DARK_STEP]
                 this.cameraActive = false
-
                 this.startCamera()
                 return
             }
         }
 
-        // Saindo do DARK_STEP: overlay some primeiro, câmera começa depois
+        // ── Saindo do DARK_STEP ───────────────────────────────────────────────
         if (prevStep === DARK_STEP)
         {
             this._overlay(0)
@@ -144,7 +144,37 @@ export default class CameraScroll
             return
         }
 
-        // Qualquer outro step normal: overlay zerado, câmera começa imediatamente
+        // ── Step 1 → 2 (timeline → cards): mesma câmera, sem movimento ────────
+        if (prevStep === 1 && nextStep === 2)
+        {
+            this._overlay(0)
+            document.dispatchEvent(new CustomEvent('timelineExit'))
+            document.addEventListener('timelineExitDone', () => {
+                this.currentIndex  = 1
+                this.transitioning = false
+                document.dispatchEvent(new CustomEvent('cameraPositionChange', {
+                    detail: { index: 1, step: 2, dir: this.scrollDir }
+                }))
+            }, { once: true })
+            return
+        }
+
+        // ── Step 2 → 1 (cards → timeline): mesma câmera, sem movimento ────────
+        if (prevStep === 2 && nextStep === 1)
+        {
+            this._overlay(0)
+            document.dispatchEvent(new CustomEvent('cardsExit'))
+            document.addEventListener('cardsExitDone', () => {
+                this.currentIndex  = 1
+                this.transitioning = false
+                document.dispatchEvent(new CustomEvent('cameraPositionChange', {
+                    detail: { index: 1, step: 1, dir: this.scrollDir }
+                }))
+            }, { once: true })
+            return
+        }
+
+        // ── Qualquer outro step normal: overlay zerado, câmera começa ─────────
         this._overlay(0)
 
         this.fromPosition.copy(this.camera.modes.debug.instance.position)
@@ -157,18 +187,25 @@ export default class CameraScroll
 
         if (prevStep === 0)
         {
-            // saindo da Tela 1: texto sai primeiro, câmera espera
+            // Hero → timeline: texto sai, câmera espera
             document.dispatchEvent(new CustomEvent('heroExit'))
             setTimeout(() => this.startCamera(), HERO_EXIT_MS)
         }
         else if (prevStep === 1)
         {
-            // saindo da Tela 2: cards colapsam primeiro, câmera espera conclusão
-            document.dispatchEvent(new CustomEvent('cardsExit'))
-            document.addEventListener('cardsExitDone', () => this.startCamera(), { once: true })
+            // Timeline → hero (backward): timeline sai, câmera espera
+            document.dispatchEvent(new CustomEvent('timelineExit'))
+            document.addEventListener('timelineExitDone', () => this.startCamera(), { once: true })
         }
         else if (prevStep === 2)
         {
+            // Cards → tela 3: cards colapsam, câmera espera
+            document.dispatchEvent(new CustomEvent('cardsExit'))
+            document.addEventListener('cardsExitDone', () => this.startCamera(), { once: true })
+        }
+        else if (prevStep === 3)
+        {
+            // Tela 3 (frase) → cards (backward): frase sai, câmera espera
             document.dispatchEvent(new CustomEvent('phraseExit'))
             const fallback = setTimeout(() => this.startCamera(), 2000)
             document.addEventListener('phraseExitDone', () => {

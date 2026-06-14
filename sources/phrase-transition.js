@@ -27,7 +27,7 @@ let atCamIndex2  = false
 let revealTimer  = null
 let inDarkStep   = false
 
-const DARK_STEP = 3
+const DARK_STEP = 4  // step 4 no novo mapeamento (era 3 antes da tela 2.1)
 
 function show() {
     if (!atCamIndex2) return

@@ -169,7 +169,7 @@ export function initGlowPointer()
     })
 
     document.addEventListener('cameraPositionChange', (e) => {
-        if (e.detail.index === 1) {
+        if (e.detail.step === 2) {
             cards.forEach(c => c.style.removeProperty('cursor'))
         }
     })
