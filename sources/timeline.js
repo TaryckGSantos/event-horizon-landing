@@ -87,12 +87,13 @@ const DATA = [
 ]
 
 // Posição base de cada partícula em frações da viewport [x, y]
+// Y máximo: 0.44 — garante que base + oscilação (30 px) ≤ 50 % da viewport
 const BASE_POS = [
-    [0.10, 0.40],
-    [0.28, 0.57],
-    [0.50, 0.46],
-    [0.72, 0.38],
-    [0.88, 0.55]
+    [0.10, 0.35],
+    [0.28, 0.44],
+    [0.50, 0.38],
+    [0.72, 0.28],
+    [0.88, 0.42]
 ]
 
 // Parâmetros de flutuação individuais
@@ -218,13 +219,16 @@ function loop() {
     const t = performance.now() * 0.001
 
     // Atualiza posições das partículas
+    const halfH = window.innerHeight * 0.50
     particleEls.forEach((el, i) => {
-        const fp = FLOAT_P[i]
-        const dx = Math.sin(t * fp.sx + fp.px) * fp.ax
-        const dy = Math.sin(t * fp.sy + fp.py) * 30
+        const fp    = FLOAT_P[i]
+        const dx    = Math.sin(t * fp.sx + fp.px) * fp.ax
+        const baseY = BASE_POS[i][1] * window.innerHeight
+        // Clamp: centro da partícula (8 px = metade dos 16 px) não ultrapassa 50 % da viewport
+        const dy = Math.min(Math.sin(t * fp.sy + fp.py) * 30, halfH - baseY - 8)
         el.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`
-        screenPos[i].x = BASE_POS[i][0] * window.innerWidth  + dx
-        screenPos[i].y = BASE_POS[i][1] * window.innerHeight + dy
+        screenPos[i].x = BASE_POS[i][0] * window.innerWidth + dx
+        screenPos[i].y = baseY + dy
     })
 
     drawCanvas(t)
@@ -459,12 +463,14 @@ window.addEventListener('wheel', (e) => {
             showParticle(innerStep)
             innerStep++
             if (innerStep >= TOTAL) {
-                // Adia o release para o próximo tick, evitando que CameraScroll
-                // processe este mesmo evento wheel (ambos ouvem o mesmo evento).
+                // 660 ms = mesmo intervalo do wheelLocked: garante que o gesto
+                // atual do trackpad se esgota antes de liberar o CameraScroll.
+                // Com setTimeout(0) o próximo evento do mesmo gesto disparava
+                // a transição 2.1→2.2 antes que o usuário iniciasse um novo scroll.
                 setTimeout(() => {
                     window.__timelineCapturing = false
                     showScrollHint(false)
-                }, 0)
+                }, 660)
             }
         }
     } else {
