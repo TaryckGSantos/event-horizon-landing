@@ -20,6 +20,7 @@
     z-index: 1000;
     opacity: 0;
     pointer-events: none;
+    overflow: hidden;
     transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
                 transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
     transform: translateY(-12px);
@@ -306,7 +307,9 @@
     list-style: none;
     margin: 0;
     padding: 0 4px;
-    overflow: visible;
+    height: 693px;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* ── Animação 5: notícias entram escalonadas da direita ───────── */
@@ -527,7 +530,7 @@
     transition: transform 340ms ease-out 60ms, opacity 340ms ease-out 60ms;
 }
 
-/* ── Ícone de Saturno — absoluto, nunca altera layout do texto ── */
+/* ── Ícone da notícia — absoluto, nunca altera layout do texto ── */
 .np-news-arrow {
     position: absolute;
     right: 24px;
@@ -548,6 +551,15 @@
     transform: translateY(-50%) translateX(0);
     /* enter: 300ms, delay 80ms — aparece por último */
     transition: opacity 300ms ease-out 80ms, transform 300ms ease-out 80ms;
+}
+
+/* ── Estado vazio ao filtrar categoria sem notícias ──────────── */
+.np-news-empty {
+    padding: 28px 18px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.22);
+    letter-spacing: 0.04em;
+    list-style: none;
 }
 
 /* ─── Modal de artigo ────────────────────────────────────────── */
@@ -723,7 +735,7 @@
         rgba(255, 255, 255, 0.18),
         transparent
     );
-    margin: 22px 0;
+    margin: 10px 0 14px;
     border: none;
 }
 
@@ -745,13 +757,13 @@
     font-weight: 400;
     color: rgba(255, 255, 255, 0.96);
     line-height: 1.35;
-    margin: 0 0 10px;
+    margin: 0 0 18px;
 }
 
 #np-modal-meta {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.28);
-    margin-bottom: 0;
+    margin-bottom: 20px;
     letter-spacing: 0.04em;
 }
 
@@ -760,7 +772,7 @@
     font-size: 15px;
     line-height: 1.88;
     color: rgba(255, 255, 255, 0.68);
-    margin: 0 0 20px;
+    margin: 0 0 26px;
     opacity: 0;
     transform: translateY(8px);
     animation: paraFadeIn 280ms ease-out both;
@@ -887,6 +899,11 @@
         transform: none;
         overflow-y: auto;
         padding: 0 16px;
+    }
+
+    .np-news-list {
+        height: auto;
+        overflow-y: visible;
     }
 
     .np-news-item {
