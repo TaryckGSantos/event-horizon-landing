@@ -6,6 +6,7 @@ const dirname = path.resolve()
 
 export default defineConfig({
     root: 'sources',
+    envDir: '../',
     publicDir: '../public',
     build:
     {

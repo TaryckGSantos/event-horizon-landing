@@ -22,19 +22,23 @@ const POSITIONS = [
 
 // Steps:
 //  0 → cam 0: Hero (tela 1)
-//  1 → cam 1: Linha do tempo (tela 2.1) — NOVO
+//  1 → cam 1: Linha do tempo (tela 2.1)
 //  2 → cam 1: Cards (tela 2.2) — mesma câmera, sem movimento
-//  3 → cam 2: Buraco negro limpo + frase (tela 3)
-//  4 → cam 2: Fade de entrada (tela 4) — DARK_STEP
-//  5 → cam 3: Portal de notícias (tela 5)
-const STEP_TO_CAM = [0, 1, 1, 2, 2, 3]
-const N_STEPS     = STEP_TO_CAM.length  // 6
+//  3 → cam 2: Buraco negro limpo + frase (tela 3.1)
+//  4 → cam 2: APOD (tela 3.2) — mesma câmera, sem movimento
+//  5 → cam 2: Fade de entrada (tela 3.3) — DARK_STEP
+//  6 → cam 3: Portal de notícias (tela 3.4)
+const STEP_TO_CAM = [0, 1, 1, 2, 2, 2, 3]
+const N_STEPS     = STEP_TO_CAM.length  // 7
 
 const DURATION     = 1.2
 const HERO_EXIT_MS = 620
-const DARK_STEP    = 4
+const DARK_STEP    = 5
 const DARK_OPACITY = 0.78
 const DARK_LOCK_MS = 600
+// Fallback para 'portalExitDone' — espelha PORTAL_EXIT_MS (400ms, transition
+// de #news-portal em news-portal.css) + buffer de 30ms, igual ao padrão do APOD.
+const PORTAL_EXIT_FALLBACK_MS = 430
 
 function easeInOut(t)
 {
@@ -96,51 +100,142 @@ export default class CameraScroll
         clearTimeout(this._safetyTimer)
         this._safetyTimer = setTimeout(() => { this.transitioning = false }, 2500)
 
+        // ── Step 3 → 4 (frase → APOD): mesma câmera, sem movimento ────────────
+        if (prevStep === 3 && nextStep === 4)
+        {
+            document.dispatchEvent(new CustomEvent('phraseExit'))
+            let phraseExitHandled = false
+            const finishPhraseExit = () => {
+                if (phraseExitHandled) return
+                phraseExitHandled = true
+                clearTimeout(phraseExitFallback)
+                document.removeEventListener('phraseExitDone', finishPhraseExit)
+                setTimeout(() => {
+                    this._overlay(DARK_OPACITY)
+                    this.currentIndex  = 2
+                    this.transitioning = false
+                    document.dispatchEvent(new CustomEvent('cameraPositionChange', {
+                        detail: { index: 2, step: 4, dir: this.scrollDir }
+                    }))
+                }, 500)
+            }
+            const phraseExitFallback = setTimeout(finishPhraseExit, 1300)
+            document.addEventListener('phraseExitDone', finishPhraseExit)
+            return
+        }
+
+        // ── Step 4 → 3 (APOD → frase): mesma câmera, sem movimento ────────────
+        if (prevStep === 4 && nextStep === 3)
+        {
+            this._overlay(0)
+            document.dispatchEvent(new CustomEvent('apodExit'))
+            document.addEventListener('apodExitDone', () => {
+                this.currentIndex  = 2
+                this.transitioning = false
+                document.dispatchEvent(new CustomEvent('cameraPositionChange', {
+                    detail: { index: 2, step: 3, dir: this.scrollDir }
+                }))
+            }, { once: true })
+            return
+        }
+
         // ── Entrando no DARK_STEP ──────────────────────────────────────────────
         if (nextStep === DARK_STEP)
         {
             if (prevStep < DARK_STEP)
             {
-                // Vindo da frase (tela 3) → escurece. Oculta a frase primeiro.
-                document.dispatchEvent(new CustomEvent('phraseExit'))
-                const doFade = () => {
-                    this._overlay(DARK_OPACITY)
+                // Vindo do APOD (tela 3.2) → o fundo já está em DARK_OPACITY desde a
+                // entrada do APOD (3.1→3.2) e não deve ser tocado. Apenas remove o
+                // card do APOD da tela.
+                document.dispatchEvent(new CustomEvent('apodExit'))
+                const finish = () => {
                     setTimeout(() => { this.transitioning = false }, DARK_LOCK_MS)
+                    // Nenhum outro evento anuncia a chegada ao DARK_STEP (a câmera não
+                    // se move aqui) — dispara cameraPositionChange para que scripts como
+                    // news-portal.js saibam que o step mudou de fato.
+                    document.dispatchEvent(new CustomEvent('cameraPositionChange', {
+                        detail: { index: this.currentIndex, step: DARK_STEP, dir: this.scrollDir }
+                    }))
                 }
-                const fadeFallback = setTimeout(doFade, 2200)
-                document.addEventListener('phraseExitDone', () => {
+                const fadeFallback = setTimeout(finish, 2200)
+                document.addEventListener('apodExitDone', () => {
                     clearTimeout(fadeFallback)
-                    doFade()
+                    finish()
                 }, { once: true })
                 return
             }
 
-            // Vindo de baixo (portal) → overlay + movimento de câmera de volta
-            this._overlay(DARK_OPACITY)
+            // Vindo de baixo (portal) → portal sai antes de mover a câmera de volta
             if (prevStep > DARK_STEP)
             {
-                this.fromPosition.copy(this.camera.modes.debug.instance.position)
-                this.fromTarget.copy(this.camera.modes.debug.orbitControls.target)
-                this.toPosition.copy(POSITIONS[STEP_TO_CAM[DARK_STEP]].position)
-                this.toTarget.copy(POSITIONS[STEP_TO_CAM[DARK_STEP]].target)
-                this.currentIndex = STEP_TO_CAM[DARK_STEP]
-                this.cameraActive = false
-                this.startCamera()
+                document.dispatchEvent(new CustomEvent('portalExit'))
+                let portalExitHandled = false
+                const moveCameraBack = () => {
+                    if (portalExitHandled) return
+                    portalExitHandled = true
+                    clearTimeout(portalExitFallback)
+                    document.removeEventListener('portalExitDone', moveCameraBack)
+                    this.fromPosition.copy(this.camera.modes.debug.instance.position)
+                    this.fromTarget.copy(this.camera.modes.debug.orbitControls.target)
+                    this.toPosition.copy(POSITIONS[STEP_TO_CAM[DARK_STEP]].position)
+                    this.toTarget.copy(POSITIONS[STEP_TO_CAM[DARK_STEP]].target)
+                    this.currentIndex = STEP_TO_CAM[DARK_STEP]
+                    this.cameraActive = false
+                    this.startCamera()
+                    setTimeout(() => this._overlay(DARK_OPACITY), DURATION * 1000 + 500)
+                }
+                const portalExitFallback = setTimeout(moveCameraBack, PORTAL_EXIT_FALLBACK_MS)
+                document.addEventListener('portalExitDone', moveCameraBack)
                 return
             }
         }
 
+        // ── Step 5 → 4 (DARK_STEP → APOD): overlay não muda ─────────────────
+        if (prevStep === DARK_STEP && nextStep === 4)
+        {
+            document.dispatchEvent(new CustomEvent('portalExit'))
+            let portalExitHandled = false
+            const showApodAgain = () => {
+                if (portalExitHandled) return
+                portalExitHandled = true
+                clearTimeout(portalExitFallback)
+                document.removeEventListener('portalExitDone', showApodAgain)
+                // #fade-overlay permanece em DARK_OPACITY — não é tocado nesta transição.
+                // Apenas o card do APOD reaparece.
+                this.currentIndex  = 2
+                this.transitioning = false
+                document.dispatchEvent(new CustomEvent('cameraPositionChange', {
+                    detail: { index: 2, step: 4, dir: this.scrollDir }
+                }))
+            }
+            const portalExitFallback = setTimeout(showApodAgain, PORTAL_EXIT_FALLBACK_MS)
+            document.addEventListener('portalExitDone', showApodAgain)
+            return
+        }
+
         // ── Saindo do DARK_STEP ───────────────────────────────────────────────
+        // O portal vive no próprio DARK_STEP — precisa sair (animação de saída,
+        // ~400ms) antes que o overlay comece a clarear ou a câmera se mova.
         if (prevStep === DARK_STEP)
         {
-            this._overlay(0)
-            this.fromPosition.copy(this.camera.modes.debug.instance.position)
-            this.fromTarget.copy(this.camera.modes.debug.orbitControls.target)
-            this.toPosition.copy(POSITIONS[nextCamIdx].position)
-            this.toTarget.copy(POSITIONS[nextCamIdx].target)
-            this.currentIndex = nextCamIdx
-            this.cameraActive = false
-            setTimeout(() => this.startCamera(), 550)
+            document.dispatchEvent(new CustomEvent('portalExit'))
+            let portalExitHandled = false
+            const finishExit = () => {
+                if (portalExitHandled) return
+                portalExitHandled = true
+                clearTimeout(portalExitFallback)
+                document.removeEventListener('portalExitDone', finishExit)
+                this._overlay(0)
+                this.fromPosition.copy(this.camera.modes.debug.instance.position)
+                this.fromTarget.copy(this.camera.modes.debug.orbitControls.target)
+                this.toPosition.copy(POSITIONS[nextCamIdx].position)
+                this.toTarget.copy(POSITIONS[nextCamIdx].target)
+                this.currentIndex = nextCamIdx
+                this.cameraActive = false
+                setTimeout(() => this.startCamera(), 1050)
+            }
+            const portalExitFallback = setTimeout(finishExit, PORTAL_EXIT_FALLBACK_MS)
+            document.addEventListener('portalExitDone', finishExit)
             return
         }
 

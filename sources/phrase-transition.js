@@ -26,8 +26,10 @@ let isVisible    = false
 let atCamIndex2  = false
 let revealTimer  = null
 let inDarkStep   = false
+let inApodStep   = false
 
-const DARK_STEP = 4  // step 4 no novo mapeamento (era 3 antes da tela 2.1)
+const DARK_STEP = 5
+const APOD_STEP = 4
 
 function show() {
     if (!atCamIndex2) return
@@ -59,11 +61,15 @@ document.addEventListener('cameraPositionChange', (e) => {
 
     if (atCamIndex2) {
         if (step === DARK_STEP) {
-            // Entrando no DARK_STEP vindo de baixo (tela 4 → 3.2): não exibe a frase
             inDarkStep = true
-        } else if (inDarkStep || !prev) {
-            // Saindo do DARK_STEP para step 2 (3.2 → 3.1), ou entrada normal vindo da tela 2
+        } else if (step === APOD_STEP) {
+            // Tela APOD — não exibe a frase; registra passagem para reexibir ao voltar
+            inApodStep = true
+            if (isVisible) hide()
+        } else if (inDarkStep || inApodStep || !prev) {
+            // Voltando do DARK ou APOD para a frase, ou entrada normal vinda da tela 2
             inDarkStep = false
+            inApodStep = false
             revealTimer = setTimeout(show, CAMERA_MS + EXTRA_MS)
         }
     } else if (isVisible) {

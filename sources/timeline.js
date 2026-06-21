@@ -729,7 +729,7 @@ function hideTimeline() {
     showScrollHint(false)
     window.__timelineCapturing = false
     resetParticles()
-    setTimeout(() => document.dispatchEvent(new CustomEvent('timelineExitDone')), 400)
+    setTimeout(() => document.dispatchEvent(new CustomEvent('timelineExitDone')), 100)
 }
 
 function forceHide() {

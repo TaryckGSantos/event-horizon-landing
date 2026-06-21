@@ -21,9 +21,9 @@
     opacity: 0;
     pointer-events: none;
     overflow: hidden;
-    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-    transform: translateY(-12px);
+    transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(-10px);
     color: #fff;
     font-family: 'DM Sans', sans-serif;
 }
@@ -443,6 +443,17 @@
 @keyframes newsItemIn {
     from { opacity: 0; transform: translateX(8px); }
     to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Animação de saída: itens sobem e desaparecem (stagger reverso) ── */
+.np-news-item.is-exiting {
+    animation: newsItemOut 200ms ease-in both;
+    animation-delay: var(--exit-delay, 0ms);
+}
+
+@keyframes newsItemOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-20px); }
 }
 
 /* ── Animação 1: linha roxa lateral via scaleY ────────────────── */

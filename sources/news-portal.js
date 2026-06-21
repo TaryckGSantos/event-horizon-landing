@@ -1,6 +1,17 @@
-// ─── News Portal — Tela 4 (DARK_STEP) ────────────────────────────
-// Ativado quando #fade-overlay recebe opacity >= 0.7 (DARK_STEP ativo).
-// Usa MutationObserver para detectar mudanças sem tocar em CameraScroll.js.
+// ─── News Portal — Tela 3.3 (DARK_STEP) ───────────────────────────
+// Ativado via evento cameraPositionChange. PORTAL_STEP espelha DARK_STEP
+// (5) de CameraScroll.js — o portal aparece sobre o fundo escurecido da
+// tela 3.3. Se DARK_STEP mudar lá, atualize este valor também.
+const PORTAL_STEP = 5
+
+// Espelha DURATION (1.2s) de CameraScroll.js + buffer de 50ms — tempo que a
+// câmera leva para assentar antes do portal poder aparecer.
+// Se DURATION mudar em CameraScroll.js, atualize este valor também.
+const CAMERA_ARRIVE_MS = 875
+
+// Duração exata da transição de saída de #news-portal
+// (transition: opacity 0.4s, transform 0.4s — news-portal.css linha 24-25)
+const PORTAL_EXIT_MS = 400
 
 // ─── Mapeamento nav → tag de filtro ──────────────────────────────
 // null   → exibe TODAS as notícias, ordenadas da mais recente à mais antiga
@@ -1182,39 +1193,97 @@ function hidePortal() {
     }
 }
 
-// ─── MutationObserver no #fade-overlay ────────────────────────────
+// ─── Saída coordenada com CameraScroll (portalExit / portalExitDone) ─
+// Segue o mesmo padrão de heroExit/cardsExit/timelineExit/apodExit:
+// CameraScroll despacha 'portalExit' antes de mover a câmera (ou de
+// anunciar o novo step) e só prossegue após 'portalExitDone'.
 
-function watchFadeOverlay() {
-    const overlay = document.getElementById('fade-overlay')
-    if (!overlay) return
+let portalExitTimer = null
 
-    const observer = new MutationObserver(() => {
-        const opacity = parseFloat(overlay.style.opacity) || 0
+// Stagger reverso: o último item visível sai primeiro (--exit-delay menor),
+// o primeiro item sai por último. Limitado aos primeiros itens da viewport —
+// itens fora de tela não precisam de delay alto (ficam atrás do fade do
+// container, que já cobre 400ms no total).
+const EXIT_STAGGER_COUNT = 8
+const EXIT_STAGGER_STEP_MS = 25
 
-        if (opacity >= 0.7) {
-            // Tela 4 ativa — aguarda o fade terminar (~550ms)
+function exitNewsItems() {
+    const items = document.querySelectorAll('.np-news-item')
+    items.forEach((el, i) => {
+        const delay = i < EXIT_STAGGER_COUNT ? (EXIT_STAGGER_COUNT - 1 - i) * EXIT_STAGGER_STEP_MS : 0
+        el.style.setProperty('--exit-delay', `${delay}ms`)
+        el.classList.add('is-exiting')
+    })
+}
+
+function handlePortalExit() {
+    if (!isPortalVisible) {
+        document.dispatchEvent(new CustomEvent('portalExitDone'))
+        return
+    }
+
+    exitNewsItems()
+
+    const portal = document.getElementById('news-portal')
+    let exitHandled = false
+
+    const finishExit = () => {
+        if (exitHandled) return
+        exitHandled = true
+        clearTimeout(portalExitTimer)
+        if (portal) portal.removeEventListener('transitionend', onTransitionEnd)
+        document.dispatchEvent(new CustomEvent('portalExitDone'))
+    }
+
+    const onTransitionEnd = (e) => {
+        if (e.target !== portal || e.propertyName !== 'opacity') return
+        finishExit()
+    }
+
+    if (portal) portal.addEventListener('transitionend', onTransitionEnd)
+    portalExitTimer = setTimeout(finishExit, PORTAL_EXIT_MS + 30)
+
+    hidePortal()
+}
+
+// ─── Ativação via cameraPositionChange ────────────────────────────
+// step === PORTAL_STEP: agenda showPortal() — o delay depende da direção:
+//   dir === 1  (vindo do step 4, sem movimento de câmera): CAMERA_ARRIVE_MS,
+//              o delay curto já existente para o overlay assentar.
+//   dir === -1 (vindo do step 6): cameraPositionChange dispara no INÍCIO da
+//              animação de câmera (DURATION 1.2s em CameraScroll.js), então
+//              precisa esperar a câmera assentar antes de mostrar o portal —
+//              CAMERA_ARRIVE_BACK_MS (1300ms = 1200ms + 100ms de buffer).
+// step !== PORTAL_STEP (DARK_STEP, frase, APOD, etc.): oculta imediatamente.
+
+const CAMERA_ARRIVE_BACK_MS = 2300
+
+function watchCameraStep() {
+    document.addEventListener('cameraPositionChange', (e) => {
+        const { step, dir } = e.detail
+
+        if (step === PORTAL_STEP) {
             if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
-            if (!isPortalVisible && !showTimer) {
+            if (!isPortalVisible) {
+                if (showTimer) { clearTimeout(showTimer); showTimer = null }
+                const delay = dir === -1 ? CAMERA_ARRIVE_BACK_MS : CAMERA_ARRIVE_MS
                 showTimer = setTimeout(() => {
                     showTimer = null
-                    const currentOpacity = parseFloat(document.getElementById('fade-overlay').style.opacity) || 0
-                    if (currentOpacity >= 0.7) showPortal()
-                }, 550)
+                    showPortal()
+                }, delay)
             }
         } else {
-            // Saiu da Tela 4 — cancela timer pendente e esconde
             if (showTimer) { clearTimeout(showTimer); showTimer = null }
             if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
             if (isPortalVisible) hidePortal()
         }
     })
-
-    observer.observe(overlay, { attributes: true, attributeFilter: ['style'] })
 }
 
 // ─── Init ─────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
     buildPortal()
-    watchFadeOverlay()
+    watchCameraStep()
+    document.addEventListener('portalExit', handlePortalExit)
 })
