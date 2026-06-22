@@ -3,8 +3,7 @@
 // A chamada à API ocorre uma vez, na primeira vez que a tela entra em foco.
 
 const APOD_STEP = 4
-const API_KEY   = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY'
-const APOD_URL  = `https://api.nasa.gov/planetary/apod?api_key=${API_KEY}`
+const APOD_URL  = '/api/apod'
 
 // Duração exata da transição de #apod-bg (transition: opacity 0.55s ease)
 const BG_FADE_MS = 550
