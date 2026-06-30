@@ -107,6 +107,19 @@ const FLOAT_P = BASE_POS.map((_, i) => ({
     ay: 18 + Math.random() * 24
 }))
 
+// Arquivos reais das imagens dos cards (ordem == ordem de DATA)
+const TIMELINE_IMAGE_FILES = ['tmln_1.webp', 'tmln_2.webp', 'tmln_3.webp', 'tmln_4.jpg', 'tmln_5.jpg']
+
+// Pré-carrega todas de uma vez para já estarem em cache quando o card abrir.
+// vite.config.js define root:'sources' — o caminho servido é relativo a essa
+// raiz, por isso o prefixo correto é '/assets/...' e não '/sources/assets/...'.
+const particleImages = TIMELINE_IMAGE_FILES.map((file) => {
+    const img = new Image()
+    img.src = `/assets/timeline/${file}`
+    img.onerror = () => console.warn('Timeline img não carregou:', img.src)
+    return img
+})
+
 const TOTAL = DATA.length
 
 // ── Estado ───────────────────────────────────────────────────────────────────
@@ -157,6 +170,7 @@ function init() {
     card.innerHTML = `
         <div id="tl-card-header">
             <div id="tl-card-header-bg"></div>
+            <img id="tl-card-header-img" alt="" />
             <div id="tl-card-icon"></div>
         </div>
         <div id="tl-card-body">
@@ -763,6 +777,26 @@ function openCard(idx) {
     document.getElementById('tl-card-title').textContent = d.label
     document.getElementById('tl-card-text').textContent  = d.text
 
+    // Imagem real do card — estado definido ANTES do is-open ser aplicado,
+    // para que a imagem já esteja correta desde o primeiro frame da animação
+    // do card (sem flash do gradiente/ícone aparecendo antes dela).
+    const headerImg = document.getElementById('tl-card-header-img')
+    const preImg     = particleImages[idx]
+    headerImg.classList.remove('is-loaded')
+    headerImg.src        = preImg.src
+    iconEl.style.display = ''
+    if (preImg.complete && preImg.naturalWidth > 0) {
+        headerImg.classList.add('is-loaded')
+        iconEl.style.display = 'none'
+    } else {
+        preImg.addEventListener('load', () => {
+            if (openIdx === idx) {
+                headerImg.classList.add('is-loaded')
+                iconEl.style.display = 'none'
+            }
+        }, { once: true })
+    }
+
     // Posiciona ao lado da partícula evitando bordas da tela
     const sp  = screenPos[idx]
     const W   = 280
@@ -804,6 +838,15 @@ function openCard(idx) {
 function closeCard() {
     openIdx = -1
     card?.classList.remove('is-open')
+    // Limpa src + estado da imagem para não vazar conteúdo do card anterior
+    // quando outro ponto da linha do tempo for aberto.
+    const headerImg = document.getElementById('tl-card-header-img')
+    if (headerImg) {
+        headerImg.classList.remove('is-loaded')
+        headerImg.src = ''
+    }
+    const iconEl = document.getElementById('tl-card-icon')
+    if (iconEl) iconEl.style.display = ''
 }
 
 // ── Wheel — scrub interno ─────────────────────────────────────────────────────
